@@ -28,7 +28,7 @@ func Load(lang string) (Catalog, error) {
 	return c, nil
 }
 
-// T replaces placeholders like {player}, {hp}, {max} in encounter order.
+// Text replaces placeholders like {player}, {hp}, {max} in encounter order.
 func (c Catalog) Text(key string, args ...any) string {
 	s, ok := c[key]
 	if !ok {
