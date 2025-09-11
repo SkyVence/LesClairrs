@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
+	"regexp"
 )
 
 type Catalog map[string]string
+
+var ph = regexp.MustCompile(`\{[A-Za-z0-9_.-]+\}`)
 
 //go:embed assets/interface/*.json
 var efs embed.FS
@@ -26,19 +28,23 @@ func Load(lang string) (Catalog, error) {
 	return c, nil
 }
 
-func (c Catalog) Text(key string, kv ...any) string {
+// T replaces placeholders like {player}, {hp}, {max} in encounter order.
+func (c Catalog) Text(key string, args ...any) string {
 	s, ok := c[key]
 	if !ok {
 		return "⟦" + key + "⟧"
 	}
-	if len(kv) == 0 {
+	if len(args) == 0 {
 		return s
 	}
-	repls := make([]string, 0, len(kv))
-	for i := 0; i+1 < len(kv); i += 2 {
-		k := fmt.Sprint(kv[i])
-		v := fmt.Sprint(kv[i+1])
-		repls = append(repls, "{"+k+"}", v)
-	}
-	return strings.NewReplacer(repls...).Replace(s)
+	idx := 0
+	return ph.ReplaceAllStringFunc(s, func(match string) string {
+		if idx < len(args) {
+			v := fmt.Sprint(args[idx])
+			idx++
+			return v
+		}
+		// not enough args: leave the placeholder as-is
+		return match
+	})
 }

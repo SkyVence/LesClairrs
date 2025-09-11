@@ -1,5 +1,6 @@
 {
 	"menu.title": "Project Red: RPG",
 	"menu.start": "Start Game",
-	"menu.quit": "Quit"
+	"menu.quit": "Quit",
+	"menu.welcome": "Welcome, {name}"
 }
