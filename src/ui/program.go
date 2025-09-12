@@ -31,17 +31,31 @@ type Program struct {
 	Model    Model
 	renderer renderer
 	msgs     chan Msg
-	quit     bool
+
+	useAltScreen bool
+
+	quit bool
+}
+type ProgramOption func(*Program)
+
+func WithAltScreen() ProgramOption {
+	return func(p *Program) {
+		p.useAltScreen = true
+	}
 }
 
-func NewProgram(model Model) *Program {
-	renderer := newRenderer(os.Stdout)
-
-	return &Program{
+func NewProgram(model Model, opts ...ProgramOption) *Program {
+	p := &Program{
 		Model:    model,
-		renderer: renderer,
+		renderer: newRenderer(os.Stdout),
 		msgs:     make(chan Msg),
 	}
+
+	for _, opt := range opts {
+		opt(p)
+	}
+
+	return p
 }
 
 func (p *Program) Run() error {
@@ -55,6 +69,11 @@ func (p *Program) Run() error {
 
 	p.renderer.start()
 	defer p.renderer.stop()
+
+	if p.useAltScreen {
+		p.renderer.enterAltScreen()
+		defer p.renderer.exitAltScreen()
+	}
 
 	go readInput(p.msgs)
 	// Process the initial message from the model's Init() method.

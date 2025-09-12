@@ -44,7 +44,7 @@ func (m *model) View() string {
 
 
 func main() {
-	p := ui.NewProgram(newModel())
+	p := ui.NewProgram(newModel(), ui.WithAltScreen())
 
 	if err := p.Run(); err != nil {
 		log.Fatalf("Error running program: %v", err)
