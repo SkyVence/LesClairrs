@@ -1,5 +1,8 @@
 # TODO LIST
 
-- [x] Check terminal size each frame (24fps)
-- [ ] Load Assests from assets folder
+- [ ] Check terminal size
+- [ ] Functionning Renderer
+- [ ] Components lib
+- [ ] Input detector
+- [ ] Load Asset from files
 - [ ] 
