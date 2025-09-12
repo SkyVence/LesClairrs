@@ -1,85 +1,74 @@
+// main.go
 package main
 
 import (
-	"fmt"
 	"log"
 
-	"github.com/charmbracelet/lipgloss"
 	"projectred-rpg.com/ui"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
+// model now holds our player's animation.
 type model struct {
-	count   int
-	spinner ui.Spinner
+	player ui.Animation
 }
 
-var _ ui.Model = &model{}
+var _ ui.Model = (*model)(nil)
 
+// newModel now loads the animation from the file.
 func newModel() *model {
+	// Load the animation frames from our .anim file.
+	frames, err := ui.LoadAnimationFile("assets/animations/loader.anim")
+	if err != nil {
+		// If the file can't be loaded, we can't run the game.
+		log.Fatalf("Could not load animation file: %v", err)
+	}
+
 	return &model{
-		count:   0,
-		spinner: ui.NewSpinner(),
+		player: ui.NewAnimation(frames),
 	}
 }
 
+// Init kicks off the animation for our component.
 func (m *model) Init() ui.Msg {
-	// Return nil and let the spinner start in the first Update call
-	return nil
+	// We need to return the initial command from our animation component.
+	return m.player.Init()()
 }
 
+// Update routes messages to the appropriate component.
 func (m *model) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
 	var cmd ui.Cmd
-	var spinnerCmd ui.Cmd
-
-	// Always update the spinner with any message
-	m.spinner, spinnerCmd = m.spinner.Update(msg)
 
 	switch msg := msg.(type) {
 	case ui.KeyMsg:
 		switch msg.Rune {
 		case 'q':
 			return m, ui.Quit
-		case 'j', 'd':
-			m.count--
-		case 'k', 'u':
-			m.count++
 		}
-	case ui.TickMsg:
-		// Spinner already updated above
-		return m, spinnerCmd
+
+	// Any other message type (like TickMsg) is delegated to the player.
 	default:
-		// For the first nil message, start the spinner
-		if msg == nil {
-			return m, m.spinner.Init()
-		}
+		m.player, cmd = m.player.Update(msg)
+		return m, cmd
 	}
 
-	// Return spinner command if we have one, otherwise nil
-	if spinnerCmd != nil {
-		return m, spinnerCmd
-	}
-
-	return m, cmd
+	return m, nil
 }
 
+// View composes the UI.
 func (m *model) View() string {
-	// Render the counter part of the view.
-	counterView := fmt.Sprintf("Count: %d", m.count)
+	// Some status text to display next to the animation.
+	statusText := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder(), true).
+		Padding(1).
+		Render("Player is running...\n\nPress 'q' to quit.")
 
-	// Render the help text.
-	helpView := "[j/d] to decrement | [k/u] to increment | [q] to quit"
-
-	// Combine the spinner and counter on the same line.
-	mainView := lipgloss.JoinHorizontal(lipgloss.Top,
-		m.spinner.View()+" ", // Get the spinner's view and add a space
-		counterView,
-	)
-
-	// Stack the main view and help text vertically.
-	return lipgloss.JoinVertical(lipgloss.Left,
-		mainView,
-		"", // Add a blank line
-		helpView,
+	// Use lipgloss to place the animation and status text side-by-side.
+	return lipgloss.JoinHorizontal(lipgloss.Top,
+		m.player.View(),
+		"   ", // Some space
+		statusText,
 	)
 }
 

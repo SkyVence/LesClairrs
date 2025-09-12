@@ -67,7 +67,7 @@ func newRenderer(out io.Writer) renderer {
 		out:                out,
 		mtx:                &sync.Mutex{},
 		done:               make(chan struct{}),
-		frameRate:          time.Second / time.Duration(45),
+		frameRate:          time.Second / time.Duration(24),
 		queuedMessageLines: []string{},
 	}
 	return r
@@ -77,7 +77,7 @@ func (r *standardRenderer) start() {
 	if r.ticker == nil {
 		r.ticker = time.NewTicker(r.frameRate)
 	} else {
-		r.ticker.Reset(r.frameRate)	
+		r.ticker.Reset(r.frameRate)
 	}
 
 	r.once = sync.Once{}
