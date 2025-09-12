@@ -67,7 +67,7 @@ func newRenderer(out io.Writer) renderer {
 		out:                out,
 		mtx:                &sync.Mutex{},
 		done:               make(chan struct{}),
-		frameRate:          time.Second / time.Duration(60),
+		frameRate:          time.Second / time.Duration(45),
 		queuedMessageLines: []string{},
 	}
 	return r

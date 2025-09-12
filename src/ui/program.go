@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"golang.org/x/term"
 )
@@ -25,6 +26,27 @@ type QuitMsg struct{}
 
 func Quit() Msg {
 	return QuitMsg{}
+}
+
+// TickMsg is a message that is sent on a timer.
+type TickMsg struct {
+	// The time the tick occurred.
+	Time time.Time
+}
+
+// Tick is a command that sends a TickMsg after a specified duration.
+func Tick(d time.Duration) Cmd {
+	return func() Msg {
+		time.Sleep(d)
+		return TickMsg{Time: time.Now()}
+	}
+}
+
+// TickNow returns a Tick command that fires immediately
+func TickNow() Cmd {
+	return func() Msg {
+		return TickMsg{Time: time.Now()}
+	}
 }
 
 type Program struct {
@@ -76,9 +98,21 @@ func (p *Program) Run() error {
 	}
 
 	go readInput(p.msgs)
+
 	// Process the initial message from the model's Init() method.
+	var cmd Cmd
 	if initialMsg := p.Model.Init(); initialMsg != nil {
-		p.Model, _ = p.Model.Update(initialMsg)
+		p.Model, cmd = p.Model.Update(initialMsg)
+	} else {
+		// If Init returns nil, still call Update with nil to trigger initialization
+		p.Model, cmd = p.Model.Update(nil)
+	}
+
+	// Execute the initial command if it exists
+	if cmd != nil {
+		go func() {
+			p.msgs <- cmd()
+		}()
 	}
 
 	for !p.quit {
