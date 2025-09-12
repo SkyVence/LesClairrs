@@ -2,67 +2,51 @@ package main
 
 import (
 	"fmt"
-	"time"
-
-	"projectred-rpg.com/components"
-	"projectred-rpg.com/loop"
-	"projectred-rpg.com/term"
+	"log"
 	"projectred-rpg.com/ui"
 )
 
-func main() {
-	term.HideCursor()
-	defer term.ShowCursor()
+type model struct {
+	count int
+}
 
-	// Root component: a Box containing a Menu
-	menu := &components.Menu{Items: []string{"Start", "Options", "Quit"}}
-	root := &components.Box{
-		Title:   "Project Red: RPG",
-		Style:   components.DefaultBoxStyle,
-		Padding: 1,
-		Child:   menu,
-	}
-	root.SetBounds(ui.Rect{X: 2, Y: 2, W: 40, H: 10})
-	cmds := root.Init()
+var _ ui.Model = &model{}
 
-	renderer := ui.Renderer{}
-	msgCh := make(chan any, 16)
+func newModel() *model {
+	return &model{count: 0}
+}
 
-	// Start input and ticker
-	go loop.ReadInput(msgCh)
-	go loop.Ticker(100*time.Millisecond, msgCh)
+func (m *model) Init() ui.Msg {
+	return nil
+}
 
-	// Run initial commands
-	for _, c := range cmds {
-		go func(cf ui.Cmd) { msgCh <- cf() }(c)
-	}
-
-	// Simple controller translating keys to messages
-	go func() {
-		for m := range msgCh {
-			switch v := m.(type) {
-			case loop.KeyMsg:
-				switch v.Rune {
-				case 'z':
-					msgCh <- components.MoveUp{}
-				case 's':
-					msgCh <- components.MoveDown{}
-				case '\r':
-					msgCh <- components.Enter{}
-				case 'q':
-					close(msgCh)
-					return
-				}
-			}
-
-			root.Update(m)
-			renderer.Render(root.View())
+func (m *model) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
+	switch msg := msg.(type) {
+	case ui.KeyMsg:
+		switch msg.Rune {
+		case 'q':
+			return m, ui.Quit
+		case 'j', 'd':
+			m.count--
+		case 'k', 'u':
+			m.count++
 		}
-	}()
-
-	renderer.Render(root.View())
-
-	for range msgCh {
 	}
-	fmt.Println("\nBye!")
+	return m, nil
+}
+
+func (m *model) View() string {
+	return fmt.Sprintf(
+		"Count: %d\n\n[j/d] to decrement | [k/u] to increment | [q] to quit",
+		m.count,
+	)
+}
+
+
+func main() {
+	p := ui.NewProgram(newModel())
+
+	if err := p.Run(); err != nil {
+		log.Fatalf("Error running program: %v", err)
+	}
 }
