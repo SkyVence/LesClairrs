@@ -9,7 +9,7 @@ type Msg interface{}
 
 type Component interface {
 	Init() []Cmd
-	Update() []Cmd
+	Update(Msg) []Cmd
 	View() []RenderOp
 	SetBounds(Rect)
 }
