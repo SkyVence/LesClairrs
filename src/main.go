@@ -11,7 +11,8 @@ import (
 
 // model now holds our player's animation.
 type model struct {
-	player ui.Animation
+	player      ui.Animation
+	playerWidth int
 }
 
 var _ ui.Model = (*model)(nil)
@@ -19,14 +20,23 @@ var _ ui.Model = (*model)(nil)
 // newModel now loads the animation from the file.
 func newModel() *model {
 	// Load the animation frames from our .anim file.
-	frames, err := ui.LoadAnimationFile("assets/animations/loader.anim")
+	frames, err := ui.LoadAnimationFile("assets/animations/player-running.anim")
 	if err != nil {
 		// If the file can't be loaded, we can't run the game.
 		log.Fatalf("Could not load animation file: %v", err)
 	}
 
+	maxWidth := 0
+	for _, frame := range frames {
+		w := lipgloss.Width(frame)
+		if w > maxWidth {
+			maxWidth = w
+		}
+	}
+
 	return &model{
-		player: ui.NewAnimation(frames),
+		player:      ui.NewAnimation(frames),
+		playerWidth: maxWidth,
 	}
 }
 
@@ -58,17 +68,12 @@ func (m *model) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
 
 // View composes the UI.
 func (m *model) View() string {
-	// Some status text to display next to the animation.
-	statusText := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder(), true).
-		Padding(1).
-		Render("Player is running...\n\nPress 'q' to quit.")
 
 	// Use lipgloss to place the animation and status text side-by-side.
+	// Use ViewAligned instead of View to ensure consistent positioning
 	return lipgloss.JoinHorizontal(lipgloss.Top,
-		m.player.View(),
+		m.player.ViewAligned(m.playerWidth),
 		"   ", // Some space
-		statusText,
 	)
 }
 
