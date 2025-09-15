@@ -66,6 +66,19 @@ func WithAltScreen() ProgramOption {
 	}
 }
 
+type SizeMsg struct {
+	Width  int
+	Height int
+}
+
+func (p *Program) GetSize() (int, int) {
+	width, height, err := term.GetSize(int(os.Stdin.Fd()))
+	if err != nil {
+		return 80, 24
+	}
+	return width, height
+}
+
 func NewProgram(model Model, opts ...ProgramOption) *Program {
 	p := &Program{
 		Model:    model,
@@ -109,6 +122,14 @@ func (p *Program) Run() error {
 	}
 
 	// Execute the initial command if it exists
+	if cmd != nil {
+		go func() {
+			p.msgs <- cmd()
+		}()
+	}
+
+	width, height := p.GetSize()
+	p.Model, cmd = p.Model.Update(SizeMsg{Width: width, Height: height})
 	if cmd != nil {
 		go func() {
 			p.msgs <- cmd()
