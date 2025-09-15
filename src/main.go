@@ -72,7 +72,7 @@ func (m *model) View() string {
 	// Use lipgloss to place the animation and status text side-by-side.
 	// Use ViewAligned instead of View to ensure consistent positioning
 	return lipgloss.JoinHorizontal(lipgloss.Top,
-		m.player.ViewAligned(m.playerWidth),
+		m.player.View(),
 		"   ", // Some space
 	)
 }

@@ -5,8 +5,6 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"github.com/charmbracelet/lipgloss"
 )
 
 func LoadAnimationFile(filename string) ([]string, error) {
@@ -20,12 +18,12 @@ func LoadAnimationFile(filename string) ([]string, error) {
 	}
 
 	sanitizedContent := strings.ReplaceAll(string(content), "\r", "")
-
 	rawFrames := strings.Split(sanitizedContent, "---")
 
 	var cleanedFrames []string
 	for _, frame := range rawFrames {
-		trimmedFrame := strings.TrimSpace(frame)
+		// Only trim leading/trailing newlines, NOT spaces!
+		trimmedFrame := strings.Trim(frame, "\n\t")
 		if trimmedFrame != "" {
 			cleanedFrames = append(cleanedFrames, trimmedFrame)
 		}
@@ -71,17 +69,4 @@ func (a Animation) View() string {
 		return "Animation has no frames."
 	}
 	return a.Frames[a.frame]
-}
-
-// ViewAligned returns the current animation frame with consistent positioning.
-// The maxWidth parameter ensures that all frames are aligned properly,
-// which helps prevent visual "jumping" when frames have different widths.
-func (a Animation) ViewAligned(maxWidth int) string {
-	if len(a.Frames) == 0 {
-		return "Animation has no frames."
-	}
-
-	// Create a style with a fixed width and center alignment to ensure consistent positioning
-	style := lipgloss.NewStyle().Width(maxWidth).Align(lipgloss.Center)
-	return style.Render(a.Frames[a.frame])
 }
