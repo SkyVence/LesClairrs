@@ -36,7 +36,7 @@ func newModel() *model {
 	menu := components.NewMenu("ProjectRed: RPG", menuOptions)
 
 	// Load player animation
-	frames, err := ui.LoadAnimationFile("assets/animations/player-running.anim")
+	frames, err := ui.LoadAnimationFile("assets/animations/loader.anim")
 	if err != nil {
 		log.Fatalf("Could not load animation file: %v", err)
 	}
@@ -46,6 +46,10 @@ func newModel() *model {
 		menu:   menu,
 		player: ui.NewAnimation(frames),
 	}
+}
+
+func appModel() *model {
+	return &model{}
 }
 
 func (m *model) Init() ui.Msg {
@@ -106,13 +110,12 @@ func (m *model) View() string {
 		return m.menu.View()
 	case stateGame:
 		gameContent := m.player.View()
-		hudOverlay := m.hud.View()
 
 		return lipgloss.Place(
 			m.width, m.height,
 			lipgloss.Center, lipgloss.Left,
 			gameContent,
-		) + "\n" + hudOverlay
+		)
 	default:
 		return "Unknown state"
 	}
