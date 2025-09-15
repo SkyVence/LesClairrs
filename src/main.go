@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/charmbracelet/lipgloss"
 	"projectred-rpg.com/ui"
 	"projectred-rpg.com/ui/components"
 )
@@ -12,15 +13,16 @@ type gameState int
 const (
 	stateMenu gameState = iota
 	stateGame
+	stateSettings
 )
 
 type model struct {
-	state       gameState
-	menu        components.Menu
-	player      ui.Animation
-	playerWidth int
-	width       int
-	height      int
+	state  gameState
+	menu   components.Menu
+	player ui.Animation
+	hud    ui.HUD
+	width  int
+	height int
 }
 
 func newModel() *model {
@@ -31,7 +33,7 @@ func newModel() *model {
 		{Label: "Quit", Value: "quit"},
 	}
 
-	menu := components.NewMenu("🎮 My Game", menuOptions)
+	menu := components.NewMenu("ProjectRed: RPG", menuOptions)
 
 	// Load player animation
 	frames, err := ui.LoadAnimationFile("assets/animations/player-running.anim")
@@ -103,7 +105,14 @@ func (m *model) View() string {
 	case stateMenu:
 		return m.menu.View()
 	case stateGame:
-		return m.player.View()
+		gameContent := m.player.View()
+		hudOverlay := m.hud.View()
+
+		return lipgloss.Place(
+			m.width, m.height,
+			lipgloss.Center, lipgloss.Left,
+			gameContent,
+		) + "\n" + hudOverlay
 	default:
 		return "Unknown state"
 	}

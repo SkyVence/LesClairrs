@@ -35,6 +35,10 @@ type renderer interface {
 	enterAltScreen()
 	// Disable the alternate screen buffer.
 	exitAltScreen()
+	// Position cursor at specific coordinates (0-based)
+	setCursor(x, y int)
+	// Get current terminal dimensions
+	getSize() (width int, height int)
 }
 
 type standardRenderer struct {
@@ -320,4 +324,19 @@ func (r *standardRenderer) write(s string) {
 	}
 
 	_, _ = r.buf.WriteString(s)
+}
+
+func (r *standardRenderer) setCursor(x, y int) {
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
+
+	if r.altScreenActive {
+		r.execute(ansi.CursorPosition(y, x))
+	}
+}
+
+func (r *standardRenderer) getSize() (int, int) {
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
+	return r.width, r.height
 }
