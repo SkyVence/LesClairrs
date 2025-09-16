@@ -264,6 +264,11 @@ type ConnectionLostMsg struct {
 4. **Gestion d'erreurs** : Incluez l'état d'erreur dans votre modèle
 5. **Performance** : Évitez les recalculs coûteux dans View()
 
+## Liens utiles
+
+- Lire la spécification du cycle de vie et de l'architecture séparée (engine vs game) : `docs/game-loop.md`
+- Exemples concrets d'actions UI, commandes et gestion des entrées : `docs/ui-actions.md`
+
 ## Exemple Complet : Mini-Jeu
 
 ```go
