@@ -14,7 +14,7 @@ func NewGameInstance() *Game {
 		Defense:  8,
 		Accuracy: 15,
 		MaxHP:    100,
-	}, Position{X: 10, Y: 5})
+	}, Position{X: 1, Y: 1})
 
 	return &Game{
 		Player: player,
