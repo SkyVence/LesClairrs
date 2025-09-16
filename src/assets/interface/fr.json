@@ -100,5 +100,11 @@
 	"weapon.neon_reaver.attack3.name": "GRENADE!",
 	"weapon.neon_reaver.attack3.desc": "Explosion sur 3 tours.",
 	"weapon.neon_reaver.attack4.name": "ULTI – Vortex Implosif",
-	"weapon.neon_reaver.attack4.desc": "Explosion massive."
+	"weapon.neon_reaver.attack4.desc": "Explosion massive.",
+	"name.class1.name": "D0C",
+	"name.class1.desc": "Un robot un peu plus intéligent que les autres.",
+	"name.class2.name": "APP",
+	"name.class2.desc": "Un robot furtif, rapide et précis.",
+	"name.class3.name": "PER",
+	"name.class3.desc": "Un robot robuste, fort et endurant."
 }
