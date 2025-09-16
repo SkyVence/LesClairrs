@@ -6,8 +6,40 @@ type Class struct {
     Speed       int
     Defense     int
     Accuracy    int
+
+package main
+
+import (
+    "fmt"
+)
+
+// --- Structs ---
+type Class struct {
+    Name        string
+    Description string
+    MaxHP       int
+    Force       int
+    Speed       int
+    Defense     int
+    Accuracy    int
 }
 
+type Player struct {
+    Name      string
+    Class     string
+    Level     int
+    MaxHP     int
+    CurrentHP int
+    Force     int
+    Speed     int
+    Defense   int
+    Accuracy  int
+    Inventory []InventoryItem
+    Implants  map[string]Implant // "tete", "brasD", etc
+    MaxInv    int
+}
+
+// --- Variables globales ---
 var AllClasses = []Class{
     {
         Name: "D0C",
@@ -38,6 +70,7 @@ var AllClasses = []Class{
     },
 }
 
+// --- Méthodes du joueur ---
 // Initialise un joueur selon la classe choisie
 func NewPlayer(name string, className string) *Player {
     var chosen Class
@@ -61,6 +94,7 @@ func NewPlayer(name string, className string) *Player {
         MaxInv: 10,
     }
 }
+
 // Ajoute un objet à l'inventaire, en respectant la limite MaxInv
 func (p *Player) AddItem(item Item, qty int) bool {
     total := 0
@@ -79,28 +113,6 @@ func (p *Player) AddItem(item Item, qty int) bool {
     }
     p.Inventory = append(p.Inventory, InventoryItem{Item: item, Quantity: qty})
     return true
-}
-package main
-
-import (
-    "fmt"
-    "math/rand"
-    "time"
-)
-
-type Player struct {
-    Name      string
-    Class     string
-    Level     int
-    MaxHP     int
-    CurrentHP int
-    Force     int
-    Speed     int
-    Defense   int
-    Accuracy  int
-    Inventory []InventoryItem
-    Implants  map[string]Implant // "tete", "brasD", etc
-    MaxInv    int
 }
 
 // Utilise un objet de l'inventaire (usage unique)
