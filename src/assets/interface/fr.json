@@ -3,6 +3,11 @@
 	"menu.start": "Start Game",
 	"menu.quit": "Quit",
 	"menu.welcome": "Welcome, {name}",
-	"hud.health": "Health: {currentHealth}/{MaxHealth}",
-	"hud.level": "Level {CurrentLevel} | {CurrentExp}/{ExpToNextLevel}"
+	"merchant.consumable.name": "Aethelgard",
+	"merchant.weapon.name": "Valerius",
+	"level.world1.name": "MEILAND",
+	"level.world1.stage1.name": "La fosse",
+	"level.world1.stage2.name": "Centre-Ville",
+	"level.world1.stage3.name": "Frontière NULL",
+	"level.world2.name": "CYBER DISTRICT"
 }

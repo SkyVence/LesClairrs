@@ -98,8 +98,8 @@ func (r *StandardRenderer) Stop() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
-	r.execute(ansi.EraseEntireLine)
-	r.execute("\r")
+	r.execute(ansi.ShowCursor)
+	r.execute(ansi.EraseEntireScreen)
 }
 
 func (r *StandardRenderer) execute(seq string) {

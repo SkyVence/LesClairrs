@@ -92,6 +92,10 @@ func (h *HUD) SetPlayerStats(health, maxHealth, level, exp, expToNext int, locat
 	h.location = location
 }
 
+func (h *HUD) Height() int {
+	return h.height
+}
+
 // View renders the HUD as a bottom-positioned component
 func (h *HUD) View() string {
 	if h.width == 0 || h.termWidth == 0 {
