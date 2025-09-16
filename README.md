@@ -13,7 +13,7 @@ go run src/main.go
 
 ## 🎮 Utilisation
 
-- `↑`/`↓``←`/`→` : Navigation
+- `↑`/`↓` `←`/`→` : Navigation
 - `Entrée` : Sélectionner
 
 
