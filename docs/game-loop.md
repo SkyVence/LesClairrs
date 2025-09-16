@@ -13,10 +13,11 @@ The project splits responsibilities across three layers:
 
 1. `ui` package
    - Provides the terminal UI runtime and `Program` that runs an event loop.
-   - Defines `Msg` (messages/events), `Cmd` (side-effect functions), and the `Model` interface with `Init() Msg`, `Update(Msg) (Model, Cmd)`, and `View() string`.
+   - Defines `ProgramOption` for configuring the program.
 
 2. `engine` package
-   - Small adapter that wraps a `Game` implementation and exposes the `ui.Model` interface.
+   - Defines `Msg` (messages/events), `Cmd` (side-effect functions), and the `Model` interface with `Init() Msg`, `Update(Msg) (Model, Cmd)`, and `View() string`.
+   - Small adapter that wraps a `Game` implementation and exposes the `engine.Model` interface.
    - Responsible for wiring the game's lifecycle into the `ui.Program` loop but intentionally keeps logic minimal.
 
 3. `game` package
@@ -33,7 +34,7 @@ Message flow (high level)
 Design notes
 -
 - The `engine` should not contain game rules. It only adapts the `Game` to `ui.Model`.
-- `game` may import `ui` types (messages, commands, components) to build and return view strings and commands.
+- `game` may import `engine` types (messages, commands) to build and return commands.
 - Keep `game`'s public surface small; expose a constructor `NewGame()` which returns a `Game` implementation.
 
 Minimal adapter example
@@ -43,31 +44,31 @@ Here's an illustrative (simplified) adapter used by the engine to adapt a `Game`
 ```go
 package engine
 
-import "projectred-rpg.com/ui"
+import "projectred-rpg.com/engine"
 
 // Game is a minimal interface a game package must implement to be run by the engine.
 type Game interface {
-    Init() ui.Msg
-    Update(ui.Msg) (ui.Model, ui.Cmd)
+    Init() engine.Msg
+    Update(engine.Msg) (engine.Model, engine.Cmd)
     View() string
 }
 
-// engineModel adapts the Game to the ui.Model interface.
+// engineModel adapts the Game to the engine.Model interface.
 type engineModel struct {
     game Game
 }
 
-func Wrap(g Game) ui.Model { return &engineModel{game: g} }
+func Wrap(g Game) engine.Model { return &engineModel{game: g} }
 
-func (e *engineModel) Init() ui.Msg    { return e.game.Init() }
-func (e *engineModel) Update(m ui.Msg) (ui.Model, ui.Cmd) { return e.game.Update(m) }
+func (e *engineModel) Init() engine.Msg    { return e.game.Init() }
+func (e *engineModel) Update(m engine.Msg) (engine.Model, engine.Cmd) { return e.game.Update(m) }
 func (e *engineModel) View() string   { return e.game.View() }
 ```
 
 Threading and timing
 -
 - All state updates happen synchronously inside `Update` and should be deterministic.
-- For background/async work create `ui.Cmd` functions that run concurrently; when they complete they should send messages back into the program using the program's message channel (the `ui` runtime provides helpers for this pattern).
+- For background/async work create `engine.Cmd` functions that run concurrently; when they complete they should send messages back into the program using the program's message channel (the `ui` runtime provides helpers for this pattern).
 
 Tips
 -

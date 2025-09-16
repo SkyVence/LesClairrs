@@ -36,7 +36,7 @@ package main
 import (
     "fmt"
     "strconv"
-    "github.com/votre-projet/ui"
+    "projectred-rpg.com/engine"
 )
 
 // Modèle du compteur
@@ -49,11 +49,11 @@ type IncrementMsg struct{}
 type DecrementMsg struct{}
 
 // Implémentation de l'interface Model
-func (m CounterModel) Init() ui.Msg {
+func (m CounterModel) Init() engine.Msg {
     return nil // Pas de message initial
 }
 
-func (m CounterModel) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
+func (m CounterModel) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
     switch msg := msg.(type) {
     case IncrementMsg:
         m.count++
@@ -63,14 +63,14 @@ func (m CounterModel) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
         m.count--
         return m, nil
     
-    case ui.KeyMsg:
+    case engine.KeyMsg:
         switch msg.Rune {
         case '+':
-            return m, func() ui.Msg { return IncrementMsg{} }
+            return m, func() engine.Msg { return IncrementMsg{} }
         case '-':
-            return m, func() ui.Msg { return DecrementMsg{} }
+            return m, func() engine.Msg { return DecrementMsg{} }
         case 'q':
-            return m, func() ui.Msg { return ui.Quit() }
+            return m, func() engine.Msg { return engine.Quit() }
         }
     }
     
@@ -106,27 +106,28 @@ package main
 import (
     "fmt"
     "time"
-    "github.com/votre-projet/ui"
+    "projectred-rpg.com/engine"
+    "projectred-rpg.com/ui"
 )
 
 type ClockModel struct {
     currentTime time.Time
 }
 
-func (m ClockModel) Init() ui.Msg {
-    return ui.TickNow()() // Démarre immédiatement
+func (m ClockModel) Init() engine.Msg {
+    return engine.TickNow()() // Démarre immédiatement
 }
 
-func (m ClockModel) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
+func (m ClockModel) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
     switch msg := msg.(type) {
-    case ui.TickMsg:
+    case engine.TickMsg:
         m.currentTime = msg.Time
         // Programme le prochain tick dans 1 seconde
-        return m, ui.Tick(time.Second)
+        return m, engine.Tick(time.Second)
     
-    case ui.KeyMsg:
+    case engine.KeyMsg:
         if msg.Rune == 'q' {
-            return m, func() ui.Msg { return ui.Quit() }
+            return m, func() engine.Msg { return engine.Quit() }
         }
     }
     
@@ -157,7 +158,8 @@ import (
     "fmt"
     "strings"
     "time"
-    "github.com/votre-projet/ui"
+    "projectred-rpg.com/engine"
+    "projectred-rpg.com/ui"
 )
 
 type ProgressModel struct {
@@ -165,13 +167,13 @@ type ProgressModel struct {
     direction int // 1 ou -1
 }
 
-func (m ProgressModel) Init() ui.Msg {
-    return ui.TickNow()()
+func (m ProgressModel) Init() engine.Msg {
+    return engine.TickNow()()
 }
 
-func (m ProgressModel) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
+func (m ProgressModel) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
     switch msg := msg.(type) {
-    case ui.TickMsg:
+    case engine.TickMsg:
         // Mettre à jour la progression
         m.progress += m.direction * 2
         
@@ -184,11 +186,11 @@ func (m ProgressModel) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
             m.direction = 1
         }
         
-        return m, ui.Tick(50 * time.Millisecond)
+        return m, engine.Tick(50 * time.Millisecond)
     
-    case ui.KeyMsg:
+    case engine.KeyMsg:
         if msg.Rune == 'q' {
-            return m, func() ui.Msg { return ui.Quit() }
+            return m, func() engine.Msg { return engine.Quit() }
         }
     }
     
@@ -224,7 +226,7 @@ func main() {
     // ou ProgressModel{progress: 0, direction: 1}
     
     // Créer le programme
-    program := ui.NewProgram(model, ui.WithAltScreen())
+    program := ui.NewProgram(model)
     
     // Lancer l'application
     if err := program.Run(); err != nil {
@@ -279,21 +281,21 @@ type GameModel struct {
     gameOver  bool
 }
 
-func (m GameModel) Init() ui.Msg {
-    return ui.TickNow()()
+func (m GameModel) Init() engine.Msg {
+    return engine.TickNow()()
 }
 
-func (m GameModel) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
+func (m GameModel) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
     if m.gameOver {
-        if key, ok := msg.(ui.KeyMsg); ok && key.Rune == 'r' {
+        if key, ok := msg.(engine.KeyMsg); ok && key.Rune == 'r' {
             // Redémarrer le jeu
-            return GameModel{playerX: 10, enemyX: 0, score: 0}, ui.TickNow()
+            return GameModel{playerX: 10, enemyX: 0, score: 0}, engine.TickNow()
         }
         return m, nil
     }
     
     switch msg := msg.(type) {
-    case ui.TickMsg:
+    case engine.TickMsg:
         // Logique du jeu
         m.enemyX++
         if m.enemyX > 20 {
@@ -307,9 +309,9 @@ func (m GameModel) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
             return m, nil
         }
         
-        return m, ui.Tick(200 * time.Millisecond)
+        return m, engine.Tick(200 * time.Millisecond)
     
-    case ui.KeyMsg:
+    case engine.KeyMsg:
         switch msg.Rune {
         case 'a':
             if m.playerX > 0 {
@@ -320,7 +322,7 @@ func (m GameModel) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
                 m.playerX++
             }
         case 'q':
-            return m, func() ui.Msg { return ui.Quit() }
+            return m, func() engine.Msg { return engine.Quit() }
         }
     }
     

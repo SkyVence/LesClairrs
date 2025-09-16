@@ -4,8 +4,8 @@ This document contains concrete examples for common tasks: handling user input, 
 
 Key concepts
 -
-- `ui.Msg` — messages representing events (key presses, window resize, animation tick, network responses).
-- `ui.Cmd` — a function that performs side-effects (timers, IO) and may send messages back to the program.
+- `engine.Msg` — messages representing events (key presses, window resize, animation tick, network responses).
+- `engine.Cmd` — a function that performs side-effects (timers, IO) and may send messages back to the program.
 - `Model.Update(msg)` — receives messages, updates state, and returns an updated model and a command.
 - `Model.View()` — returns the view string to render the current state.
 
@@ -16,18 +16,17 @@ When the player presses Enter on the menu, the `game` should switch to the game 
 Pseudocode for `Update` handling the menu selection:
 
 ```go
-func (m *model) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
+func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
     switch msg := msg.(type) {
-    case ui.KeyMsg:
+    case engine.KeyMsg:
         if msg.Rune == '\r' || msg.Rune == '\n' {
             chosen := m.menu.GetSelected()
             switch chosen.Value {
             case "start":
                 m.state = stateGame
-                // Return a command that initializes the player's animation cycle
-                return m, m.player.Init()
+                return m, nil
             case "quit":
-                return m, ui.Quit
+                return m, engine.Quit
             }
         }
     }
@@ -40,28 +39,27 @@ Example 2 — triggering an in-game action (attack) with animation
 This example shows how to handle an attack action, launch an animation command, and transition state when the animation finishes.
 
 Assumptions:
-- `ui.KeyMsg` carries the key rune for key presses.
-- `ui.Cmd` is a function that can send a message back to the `Update` loop when finished.
-- `player.Attack()` returns a `ui.Cmd` that sends `AttackDoneMsg` when the animation completes.
+- `engine.KeyMsg` carries the key rune for key presses.
+- `engine.Cmd` is a function that can send a message back to the `Update` loop when finished.
+- `player.Run()` returns a `engine.Cmd` that sends `RunDoneMsg` when the animation completes.
 
 ```go
 // Declare a message that indicates attack finished
-type AttackDoneMsg struct{ Success bool }
+type RunDoneMsg struct{ Success bool }
 
-func (m *model) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
+func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
     switch msg := msg.(type) {
-    case ui.KeyMsg:
-        if msg.Rune == 'a' && m.state == stateGame {
-            // Update state immediately to playing-attack animation
-            m.player.StartAttackAnimation()
-            // Return a Cmd that will send AttackDoneMsg when the animation completes
-            return m, m.player.Attack()
+    case engine.KeyMsg:
+        if msg.Rune == 'r' && m.state == stateGame {
+            // Update state immediately to playing-run animation
+            m.player.StartRunAnimation()
+            // Return a Cmd that will send RunDoneMsg when the animation completes
+            return m, m.player.Run()
         }
 
-    case AttackDoneMsg:
+    case RunDoneMsg:
         if msg.Success {
-            // apply damage, update enemy HP, etc.
-            m.applyDamageToTarget(10)
+            // apply side effects of running, etc.
         }
         // return nil - no further commands needed right now
         return m, nil
@@ -73,28 +71,14 @@ func (m *model) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
 
 Example 3 — animations driven by a ticker command
 -
-Animations often need periodic ticks. Implement a `Cmd` that starts a goroutine sending `TickMsg{}` every N milliseconds. Use `Cmd` helpers provided by `ui` when available.
+Animations often need periodic ticks. The `engine` package provides an `engine.Tick` command that starts a goroutine sending `TickMsg{}` every N milliseconds.
 
 ```go
-// TickMsg indicates a single animation tick
-type TickMsg struct{}
-
-func TickCmd(interval time.Duration) ui.Cmd {
-    return func(send func(ui.Msg)) {
-        ticker := time.NewTicker(interval)
-        go func() {
-            for range ticker.C {
-                send(TickMsg{})
-            }
-        }()
-    }
-}
-
-func (m *model) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
+func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
     switch msg.(type) {
-    case TickMsg:
+    case engine.TickMsg:
         m.player.AdvanceFrame()
-        return m, nil
+        return m, engine.Tick(100 * time.Millisecond)
     }
     return m, nil
 }
@@ -102,15 +86,21 @@ func (m *model) Update(msg ui.Msg) (ui.Model, ui.Cmd) {
 
 Example 4 — combining commands
 -
-You may want to run multiple commands in response to a single message. Compose them with a helper:
+You may want to run multiple commands in response to a single message. The `engine` package does not provide a helper for this, but you can implement one like this:
 
 ```go
-func Batch(cmds ...ui.Cmd) ui.Cmd {
-    return func(send func(ui.Msg)) {
+func Batch(cmds ...engine.Cmd) engine.Cmd {
+    return func() engine.Msg {
         for _, cmd := range cmds {
-            if cmd == nil { continue }
-            go cmd(send)
+            if cmd != nil {
+                go func() {
+                    // We assume that the commands will send messages to the program loop.
+                    // This implementation does not collect the messages.
+                    cmd()
+                }()
+            }
         }
+        return nil
     }
 }
 ```
