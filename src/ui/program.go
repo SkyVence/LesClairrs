@@ -66,6 +66,49 @@ func WithAltScreen() ProgramOption {
 	}
 }
 
+type SizeMsg struct {
+	Width  int
+	Height int
+}
+
+func (p *Program) GetSize() (int, int) {
+	fd := int(os.Stdin.Fd())
+	fmt.Fprintf(os.Stderr, "[DEBUG] GetSize: Getting terminal size for fd=%d\n", fd)
+
+	// Check environment variables that might affect terminal detection
+	fmt.Fprintf(os.Stderr, "[DEBUG] GetSize: TERM=%s\n", os.Getenv("TERM"))
+	fmt.Fprintf(os.Stderr, "[DEBUG] GetSize: COLUMNS=%s\n", os.Getenv("COLUMNS"))
+	fmt.Fprintf(os.Stderr, "[DEBUG] GetSize: LINES=%s\n", os.Getenv("LINES"))
+
+	// Check if stdin is a terminal
+	if !term.IsTerminal(fd) {
+		fmt.Fprintf(os.Stderr, "[DEBUG] GetSize: stdin (fd=%d) is not a terminal!\n", fd)
+		fmt.Fprintf(os.Stderr, "[DEBUG] GetSize: Returning default size: 80x24\n")
+		return 80, 24
+	}
+
+	fmt.Fprintf(os.Stderr, "[DEBUG] GetSize: stdin is a valid terminal\n")
+
+	width, height, err := term.GetSize(fd)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[DEBUG] GetSize: Error getting terminal size: %v\n", err)
+		fmt.Fprintf(os.Stderr, "[DEBUG] GetSize: Error type: %T\n", err)
+		fmt.Fprintf(os.Stderr, "[DEBUG] GetSize: Returning default size: 80x24\n")
+		return 80, 24
+	}
+
+	fmt.Fprintf(os.Stderr, "[DEBUG] GetSize: Successfully got terminal size: width=%d, height=%d\n", width, height)
+
+	// Sanity check the values
+	if width <= 0 || height <= 0 {
+		fmt.Fprintf(os.Stderr, "[DEBUG] GetSize: WARNING: Invalid size values (width=%d, height=%d), returning defaults\n", width, height)
+		return 80, 24
+	}
+
+	return width, height
+}
+
 func NewProgram(model Model, opts ...ProgramOption) *Program {
 	p := &Program{
 		Model:    model,
@@ -81,8 +124,10 @@ func NewProgram(model Model, opts ...ProgramOption) *Program {
 }
 
 func (p *Program) Run() error {
+	fmt.Fprintf(os.Stderr, "[DEBUG] Run: Starting program\n")
 
 	fd := int(os.Stdin.Fd())
+	fmt.Fprintf(os.Stderr, "[DEBUG] Run: stdin fd=%d\n", fd)
 	oldState, err := term.MakeRaw(fd)
 	if err != nil {
 		return fmt.Errorf("failed to enter raw mode: %w", err)
@@ -97,6 +142,7 @@ func (p *Program) Run() error {
 		defer p.renderer.exitAltScreen()
 	}
 
+	p.renderer.hideCursor()
 	go readInput(p.msgs)
 
 	// Process the initial message from the model's Init() method.
@@ -109,6 +155,18 @@ func (p *Program) Run() error {
 	}
 
 	// Execute the initial command if it exists
+	if cmd != nil {
+		go func() {
+			p.msgs <- cmd()
+		}()
+	}
+
+	fmt.Fprintf(os.Stderr, "[DEBUG] Run: About to call GetSize\n")
+	width, height := p.GetSize()
+	fmt.Fprintf(os.Stderr, "[DEBUG] Run: GetSize returned width=%d, height=%d\n", width, height)
+
+	fmt.Fprintf(os.Stderr, "[DEBUG] Run: Sending SizeMsg to model with width=%d, height=%d\n", width, height)
+	p.Model, cmd = p.Model.Update(SizeMsg{Width: width, Height: height})
 	if cmd != nil {
 		go func() {
 			p.msgs <- cmd()
