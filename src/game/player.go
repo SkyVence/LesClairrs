@@ -17,9 +17,38 @@ func NewPlayer(name string, class Class, pos Position) *Player {
 		Class:     class,
 		Stats:     stats,
 		Pos:       pos,
+		sprite:    createStickManSprite(),
 		Inventory: make([]Item, 0, 10),
 		Implants:  [5]Implant{},
 		MaxInv:    10,
+	}
+}
+
+// Placeholder until i implement moving animation
+func createStickManSprite() string {
+	return ` o
+/|\
+/ \`
+}
+
+func (p *Player) Move(direction rune, width, height int) {
+	switch direction {
+	case '↑':
+		if p.Pos.Y > 1 { // Account for top border
+			p.Pos.Y--
+		}
+	case '↓':
+		if p.Pos.Y < height-4 { // Account for sprite height and bottom border
+			p.Pos.Y++
+		}
+	case '←':
+		if p.Pos.X > 1 { // Account for left border
+			p.Pos.X--
+		}
+	case '→':
+		if p.Pos.X < width-4 { // Account for sprite width and right border
+			p.Pos.X++
+		}
 	}
 }
 

@@ -84,6 +84,9 @@ type Player struct {
 	Stats PlayerStats
 	Pos   Position
 
+	// Placeholder until i implement moving animation
+	sprite string
+
 	Inventory []Item
 	Implants  [5]Implant // "tete", "brasD", etc - fixed size array
 	MaxInv    int
