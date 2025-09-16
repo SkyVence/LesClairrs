@@ -7,7 +7,7 @@ type Game struct {
 
 func NewGameInstance() *Game {
 	// Hardcoded for now
-	player := NewPlayer("Hero", Class{
+	player := NewPlayer("Sam", Class{
 		Name:     "Cyber-Samurai",
 		Force:    10,
 		Speed:    12,
