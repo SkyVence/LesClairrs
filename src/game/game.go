@@ -5,7 +5,6 @@ import (
 
 	"projectred-rpg.com/engine"
 	"projectred-rpg.com/ui"
-	"projectred-rpg.com/ui/components"
 )
 
 type gameState int
@@ -18,7 +17,7 @@ const (
 
 type model struct {
 	state  gameState
-	menu   components.Menu
+	menu   ui.Menu
 	player engine.Animation
 	hud    *ui.HUD
 	width  int
@@ -27,13 +26,13 @@ type model struct {
 
 func NewGame() *model {
 	// Create menu options
-	menuOptions := []components.MenuOption{
+	menuOptions := []ui.MenuOption{
 		{Label: "Start Game", Value: "start"},
 		{Label: "Settings", Value: "settings"},
 		{Label: "Quit", Value: "quit"},
 	}
 
-	menu := components.NewMenu("ProjectRed: RPG", menuOptions)
+	menu := ui.NewMenu("ProjectRed: RPG", menuOptions)
 
 	// Load player animation
 	frames, err := engine.LoadAnimationFile("assets/animations/loader.anim")
