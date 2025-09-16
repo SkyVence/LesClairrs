@@ -26,7 +26,7 @@ type Class struct {
 
 type Player struct {
     Name      string
-    Class     string
+    Class     Class
     Level     int
     MaxHP     int
     CurrentHP int
@@ -129,4 +129,25 @@ func (p *Player) UseItem(itemName string, enemy *Enemy) bool {
         }
     }
     return false
+}
+
+
+func (p *Player) Exp() {
+}
+
+
+func NoMoreHealthGameOver() {
+    if 
+    fmt.Println("Game Over! Le joueur est mort.")
+}
+
+// Vérifie si le joueur est mort et affiche le game over
+func CheckGameOver(player *Player) bool {
+    if player.CurrentHP <= 0 {
+        fmt.Println("Game Over! Le joueur est mort.")
+        // Ici tu peux ajouter un retour au menu, ou arrêter le jeu
+        return true
+    }
+    return false
+}
 }

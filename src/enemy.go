@@ -89,3 +89,43 @@ var AllEnemies = []Enemy{
         Type: "boss de fin de jeu",
     },
 }
+
+
+
+func GetDamageFromPlayer(player *Player, enemy *Enemy, attack Attack) {
+    rand.Seed(time.Now().UnixNano())
+    hitChance := rand.Intn(100)
+    if hitChance < player.Accuracy {
+        baseDamage := attack.Damage + player.Force - enemy.Defense
+        if baseDamage < 0 {
+            baseDamage = 0
+        }
+        enemy.CurrentHP -= baseDamage
+        fmt.Printf("%s utilise %s et inflige %d dégâts à %s !\n", player.Name, attack.Name, baseDamage, enemy.Name)
+        if attack.Effect != nil {
+            attack.Effect(player, enemy)
+        }
+    } else {
+        fmt.Printf("%s utilise %s mais rate son attaque !\n", player.Name, attack.Name)
+    }
+}
+
+
+func DoDamageToPlayer(player *Player, enemy *Enemy) {
+    // Choisir une attaque (ici la première pour l'exemple)
+    if len(enemy.Attacks) == 0 {
+        return
+    }
+    attack := enemy.Attacks[0]
+    // Application des dégâts
+    damage := attack.Damage
+    player.CurrentHP -= damage
+    if player.CurrentHP < 0 {
+        player.CurrentHP = 0
+    }
+    fmt.Printf("%s utilise %s et inflige %d dégâts à %s !\n", enemy.Name, attack.Name, damage, player.Name)
+    // Application de l'effet spécial si présent
+    if attack.Effect != nil {
+        attack.Effect(player, enemy)
+    }
+}
