@@ -73,12 +73,18 @@ type Item struct {
 	Effect      Effect
 }
 
+type Position struct {
+	X int
+	Y int
+}
+
 type Player struct {
 	Name  string
 	Class Class
 	Stats PlayerStats
+	Pos   Position
 
-	Inventory [10]Item
+	Inventory []Item
 	Implants  [5]Implant // "tete", "brasD", etc - fixed size array
 	MaxInv    int
 }

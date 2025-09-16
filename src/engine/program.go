@@ -1,17 +1,16 @@
-package ui
+package engine
 
 import (
 	"fmt"
 	"os"
 
 	"golang.org/x/term"
-	"projectred-rpg.com/engine"
 )
 
 type Program struct {
-	Model    engine.Model
-	renderer engine.Renderer
-	msgs     chan engine.Msg
+	Model    Model
+	renderer Renderer
+	msgs     chan Msg
 
 	useAltScreen bool
 
@@ -47,11 +46,11 @@ func (p *Program) GetSize() (int, int) {
 	return width, height
 }
 
-func NewProgram(model engine.Model, opts ...ProgramOption) *Program {
+func NewProgram(model Model, opts ...ProgramOption) *Program {
 	p := &Program{
 		Model:    model,
-		renderer: engine.NewRenderer(os.Stdout),
-		msgs:     make(chan engine.Msg),
+		renderer: NewRenderer(os.Stdout),
+		msgs:     make(chan Msg),
 	}
 
 	for _, opt := range opts {
@@ -79,10 +78,10 @@ func (p *Program) Run() error {
 	}
 
 	p.renderer.HideCursor()
-	go engine.ReadInput(p.msgs)
+	go ReadInput(p.msgs)
 
 	// Process the initial message from the model's Init() method.
-	var cmd engine.Cmd
+	var cmd Cmd
 	if initialMsg := p.Model.Init(); initialMsg != nil {
 		p.Model, cmd = p.Model.Update(initialMsg)
 	} else {
@@ -99,7 +98,7 @@ func (p *Program) Run() error {
 
 	width, height := p.GetSize()
 
-	p.Model, cmd = p.Model.Update(engine.SizeMsg{Width: width, Height: height})
+	p.Model, cmd = p.Model.Update(SizeMsg{Width: width, Height: height})
 	if cmd != nil {
 		go func() {
 			p.msgs <- cmd()
@@ -117,13 +116,13 @@ func (p *Program) Run() error {
 		msg := <-p.msgs
 
 		// Handle the quit message specifically.
-		if _, ok := msg.(engine.QuitMsg); ok {
+		if _, ok := msg.(QuitMsg); ok {
 			p.quit = true
 			return nil
 		}
 
 		// Process the message by calling the model's Update function.
-		var cmd engine.Cmd
+		var cmd Cmd
 		p.Model, cmd = p.Model.Update(msg)
 
 		if cmd != nil {
