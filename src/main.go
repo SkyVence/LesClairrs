@@ -1,14 +1,20 @@
 package main
 
 import (
-	"fmt"
+	"log"
+
+	"projectred-rpg.com/engine"
+	"projectred-rpg.com/game"
+	"projectred-rpg.com/ui"
 )
 
 func main() {
-	lang, _ := Load("fr")
-	title := lang.Text("menu.title")
-	welcome := lang.Text("menu.welcome")
-	fmt.Print(title)
-	fmt.Print(welcome)
+	// Create the game instance (game logic lives in the game package)
+	g := game.NewGame()
+
+	// Wrap it with the engine adapter so it satisfies ui.Model
+	p := ui.NewProgram(engine.Wrap(g), ui.WithAltScreen())
+	if err := p.Run(); err != nil {
+		log.Fatalf("Error running program: %v", err)
+	}
 }
- 

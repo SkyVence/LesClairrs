@@ -2,5 +2,7 @@
 	"menu.title": "Project Red: RPG",
 	"menu.start": "Start Game",
 	"menu.quit": "Quit",
-	"menu.welcome": "Welcome, {name}"
+	"menu.welcome": "Welcome, {name}",
+	"hud.health": "Health: {currentHealth}/{MaxHealth}",
+	"hud.level": "Level {CurrentLevel} | {CurrentExp}/{ExpToNextLevel}"
 }
