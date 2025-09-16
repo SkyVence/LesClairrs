@@ -118,4 +118,26 @@ var AllItems = []Item{
 			fmt.Println(p.Name, "attaque 2 fois ce tour !")
 		},
 	},
+	{
+		Name:   "Grande Bourse",
+		Type:   "upgrade",
+		Rarity: "rare",
+		Description: "Augmente la capacité d'inventaire de 10 slots.",
+		Cooldown: 0,
+		Effect: func(p *Player, e *Enemy) {
+			p.MaxInv += 10
+			fmt.Println(p.Name, "utilise Grande Bourse : capacité d'inventaire +10 !")
+		},
+	},
+	{
+		Name:   "Grosse Bourse",
+		Type:   "upgrade",
+		Rarity: "épique",
+		Description: "Augmente la capacité d'inventaire de 10 slots.",
+		Cooldown: 0,
+		Effect: func(p *Player, e *Enemy) {
+			p.MaxInv += 10
+			fmt.Println(p.Name, "utilise Grosse Bourse : capacité d'inventaire +10 !")
+		},
+	},
 }

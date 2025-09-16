@@ -1,3 +1,22 @@
+// Ajoute un objet à l'inventaire, en respectant la limite MaxInv
+func (p *Player) AddItem(item Item, qty int) bool {
+    total := 0
+    for _, invItem := range p.Inventory {
+        total += invItem.Quantity
+    }
+    if total+qty > p.MaxInv {
+        fmt.Println("Inventaire plein !")
+        return false
+    }
+    for i, invItem := range p.Inventory {
+        if invItem.Item.Name == item.Name {
+            p.Inventory[i].Quantity += qty
+            return true
+        }
+    }
+    p.Inventory = append(p.Inventory, InventoryItem{Item: item, Quantity: qty})
+    return true
+}
 package main
 
 import (
