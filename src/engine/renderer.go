@@ -1,4 +1,4 @@
-package ui
+package engine
 
 import (
 	"bytes"
@@ -10,38 +10,38 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-type renderer interface {
+type Renderer interface {
 	// Start the renderer
-	start()
+	Start()
 	// Stop the renderer
-	stop()
+	Stop()
 	// Kill the renderer
-	kill()
+	Kill()
 	// Write to the viewport
-	write(string)
+	Write(string)
 	// Clear the screen
-	clearScreen()
+	ClearScreen()
 	// Full repaint the screen
-	repaint()
+	Repaint()
 	// Show cursor
-	showCursor()
+	ShowCursor()
 	// Hide cursor
-	hideCursor()
+	HideCursor()
 	// Set window title
-	setWindowTitle(string)
+	SetWindowTitle(string)
 	// Whether or not the alternate screen buffer is enabled.
-	altScreen() bool
+	AltScreen() bool
 	// Enable the alternate screen buffer.
-	enterAltScreen()
+	EnterAltScreen()
 	// Disable the alternate screen buffer.
-	exitAltScreen()
+	ExitAltScreen()
 	// Position cursor at specific coordinates (0-based)
-	setCursor(x, y int)
+	SetCursor(x, y int)
 	// Get current terminal dimensions
-	getSize() (width int, height int)
+	GetSize() (width int, height int)
 }
 
-type standardRenderer struct {
+type StandardRenderer struct {
 	mtx *sync.Mutex
 	out io.Writer
 
@@ -66,8 +66,8 @@ type standardRenderer struct {
 	ignoreLines map[int]struct{}
 }
 
-func newRenderer(out io.Writer) renderer {
-	r := &standardRenderer{
+func NewRenderer(out io.Writer) Renderer {
+	r := &StandardRenderer{
 		out:                out,
 		mtx:                &sync.Mutex{},
 		done:               make(chan struct{}),
@@ -77,7 +77,7 @@ func newRenderer(out io.Writer) renderer {
 	return r
 }
 
-func (r *standardRenderer) start() {
+func (r *StandardRenderer) Start() {
 	if r.ticker == nil {
 		r.ticker = time.NewTicker(r.frameRate)
 	} else {
@@ -89,7 +89,7 @@ func (r *standardRenderer) start() {
 	go r.listen()
 }
 
-func (r *standardRenderer) stop() {
+func (r *StandardRenderer) Stop() {
 	r.once.Do(func() {
 		r.done <- struct{}{}
 	})
@@ -102,11 +102,11 @@ func (r *standardRenderer) stop() {
 	r.execute("\r")
 }
 
-func (r *standardRenderer) execute(seq string) {
+func (r *StandardRenderer) execute(seq string) {
 	_, _ = io.WriteString(r.out, seq)
 }
 
-func (r *standardRenderer) kill() {
+func (r *StandardRenderer) Kill() {
 	r.once.Do(func() {
 		r.done <- struct{}{}
 	})
@@ -118,7 +118,7 @@ func (r *standardRenderer) kill() {
 	r.execute("\r")
 }
 
-func (r *standardRenderer) listen() {
+func (r *StandardRenderer) listen() {
 	for {
 		select {
 		case <-r.done:
@@ -130,7 +130,7 @@ func (r *standardRenderer) listen() {
 	}
 }
 
-func (r *standardRenderer) flush() {
+func (r *StandardRenderer) flush() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
@@ -220,36 +220,36 @@ func (r *standardRenderer) flush() {
 	r.buf.Reset()
 }
 
-func (r *standardRenderer) lastLinesRendered() int {
+func (r *StandardRenderer) lastLinesRendered() int {
 	if r.altScreenActive {
 		return r.altLinesRendered
 	}
 	return r.linesRendered
 }
 
-func (r *standardRenderer) clearScreen() {
+func (r *StandardRenderer) ClearScreen() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
 	r.execute(ansi.EraseEntireScreen)
 	r.execute(ansi.CursorHomePosition)
 
-	r.repaint()
+	r.Repaint()
 }
 
-func (r *standardRenderer) repaint() {
+func (r *StandardRenderer) Repaint() {
 	r.lastRender = ""
 	r.lastRenderedLines = nil
 }
 
-func (r *standardRenderer) altScreen() bool {
+func (r *StandardRenderer) AltScreen() bool {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
 	return r.altScreenActive
 }
 
-func (r *standardRenderer) enterAltScreen() {
+func (r *StandardRenderer) EnterAltScreen() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
@@ -271,10 +271,10 @@ func (r *standardRenderer) enterAltScreen() {
 
 	r.altLinesRendered = 0
 
-	r.repaint()
+	r.Repaint()
 }
 
-func (r *standardRenderer) exitAltScreen() {
+func (r *StandardRenderer) ExitAltScreen() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
@@ -291,10 +291,10 @@ func (r *standardRenderer) exitAltScreen() {
 		r.execute(ansi.ShowCursor)
 	}
 
-	r.repaint()
+	r.Repaint()
 }
 
-func (r *standardRenderer) showCursor() {
+func (r *StandardRenderer) ShowCursor() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
@@ -302,7 +302,7 @@ func (r *standardRenderer) showCursor() {
 	r.execute(ansi.ShowCursor)
 }
 
-func (r *standardRenderer) hideCursor() {
+func (r *StandardRenderer) HideCursor() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
@@ -310,11 +310,11 @@ func (r *standardRenderer) hideCursor() {
 	r.execute(ansi.HideCursor)
 }
 
-func (r *standardRenderer) setWindowTitle(title string) {
+func (r *StandardRenderer) SetWindowTitle(title string) {
 	r.execute(ansi.SetWindowTitle(title))
 }
 
-func (r *standardRenderer) write(s string) {
+func (r *StandardRenderer) Write(s string) {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 	r.buf.Reset()
@@ -326,7 +326,7 @@ func (r *standardRenderer) write(s string) {
 	_, _ = r.buf.WriteString(s)
 }
 
-func (r *standardRenderer) setCursor(x, y int) {
+func (r *StandardRenderer) SetCursor(x, y int) {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
@@ -335,7 +335,7 @@ func (r *standardRenderer) setCursor(x, y int) {
 	}
 }
 
-func (r *standardRenderer) getSize() (int, int) {
+func (r *StandardRenderer) GetSize() (int, int) {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 	return r.width, r.height

@@ -2,7 +2,7 @@ package components
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"projectred-rpg.com/ui"
+	"projectred-rpg.com/engine"
 )
 
 type MenuOption struct {
@@ -57,12 +57,12 @@ func NewMenu(title string, options []MenuOption, styles ...MenuStyles) Menu {
 	}
 }
 
-func (m Menu) Update(msg ui.Msg) (Menu, ui.Cmd) {
+func (m Menu) Update(msg engine.Msg) (Menu, engine.Cmd) {
 	switch msg := msg.(type) {
-	case ui.SizeMsg:
+	case engine.SizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-	case ui.KeyMsg:
+	case engine.KeyMsg:
 		switch msg.Rune {
 		case '↓':
 			if m.selected < len(m.Options)-1 {

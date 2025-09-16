@@ -1,5 +1,5 @@
 // input.go
-package ui
+package engine
 
 import (
 	"os"
@@ -7,7 +7,7 @@ import (
 
 // readInput reads from stdin and sends messages to the provided channel.
 // This function runs in a separate goroutine and blocks until input is received.
-func readInput(msgs chan<- Msg) {
+func ReadInput(msgs chan<- Msg) {
 	// A small buffer to read raw bytes from the terminal.
 	buf := make([]byte, 1024)
 

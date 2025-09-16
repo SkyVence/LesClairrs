@@ -3,7 +3,7 @@ package components
 import (
 	"time"
 
-	"projectred-rpg.com/ui"
+	"projectred-rpg.com/engine"
 )
 
 const DefaultSpinnerInterval = 100 * time.Millisecond
@@ -21,15 +21,15 @@ func NewSpinner() Spinner {
 	}
 }
 
-func (s Spinner) Init() ui.Cmd {
-	return ui.TickNow()
+func (s Spinner) Init() engine.Cmd {
+	return engine.TickNow()
 }
 
-func (s Spinner) Update(msg ui.Msg) (Spinner, ui.Cmd) {
+func (s Spinner) Update(msg engine.Msg) (Spinner, engine.Cmd) {
 	switch msg.(type) {
-	case ui.TickMsg:
+	case engine.TickMsg:
 		s.frame = (s.frame + 1) % len(spinnerFrames)
-		return s, ui.Tick(s.speed)
+		return s, engine.Tick(s.speed)
 	}
 	return s, nil
 }

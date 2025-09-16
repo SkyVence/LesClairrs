@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"projectred-rpg.com/engine"
 )
 
 // HUD represents a heads-up display component that sticks to the bottom
@@ -66,13 +67,13 @@ func NewHud() *HUD {
 	}
 }
 
-func (h *HUD) Init() Cmd {
-	return TickNow()
+func (h *HUD) Init() engine.Cmd {
+	return engine.TickNow()
 }
 
-func (h *HUD) Update(msg Msg) (HUD, Cmd) {
+func (h *HUD) Update(msg engine.Msg) (HUD, engine.Cmd) {
 	switch msg := msg.(type) {
-	case SizeMsg:
+	case engine.SizeMsg:
 		h.termWidth = msg.Width
 		h.termHeight = msg.Height
 		// HUD takes full width but fixed height
