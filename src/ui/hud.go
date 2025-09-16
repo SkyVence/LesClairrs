@@ -147,17 +147,16 @@ func (h *HUD) View() string {
 	locationText := h.location
 
 	// Create the three sections
-	leftSection := lipgloss.JoinVertical(lipgloss.Left,
+	leftSection := "\n" + lipgloss.JoinVertical(lipgloss.Left,
 		styles.Text.Render(healthText),
 		styles.HealthBar.Render(healthBar),
 	)
 
-	centerSection := lipgloss.JoinVertical(lipgloss.Center,
-		styles.Text.Render(levelText),
+	centerSection := "\n" + lipgloss.JoinVertical(lipgloss.Center,
 		styles.Text.Render(locationText),
 	)
 
-	rightSection := lipgloss.JoinVertical(lipgloss.Right,
+	rightSection := styles.Text.Render(levelText) + "\n" + lipgloss.JoinVertical(lipgloss.Right,
 		styles.Text.Render(expText),
 		styles.ExpBar.Render(expBar),
 	)
