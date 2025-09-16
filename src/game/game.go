@@ -32,7 +32,7 @@ func NewGameInstance(selectedClass Class) *Game {
 
 	world := NewWorld(1)
 
-	// Hardcoded for now
+	// Hardcoded for now --> Probably will be changed if implementing save/load system
 	player := NewPlayer("Sam", selectedClass, Position{X: 1, Y: 1})
 
 	return &Game{
