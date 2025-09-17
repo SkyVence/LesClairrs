@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"strings"
 
 	"projectred-rpg.com/engine"
@@ -13,6 +14,7 @@ const (
 	stateMenu gameState = iota
 	stateGame
 	stateSettings
+	stateTransition
 )
 
 type model struct {
@@ -21,6 +23,7 @@ type model struct {
 	game      *Game
 	gameSpace *GameRenderer
 	hud       *ui.HUD
+	spinner   ui.Spinner
 	width     int
 	height    int
 }
@@ -38,13 +41,22 @@ func NewGame() *model {
 	return &model{
 		state: stateMenu,
 		menu:  menu,
-		game:  NewGameInstance(),
-		hud:   ui.NewHud(),
+		game: NewGameInstance(Class{
+			Name:        "Cyber-Samurai",
+			MaxHP:       100,
+			Force:       1,
+			Speed:       12,
+			Defense:     8,
+			Accuracy:    15,
+			Description: "A swift and deadly warrior, excelling in close combat and agility.",
+		}),
+		hud:     ui.NewHud(),
+		spinner: ui.NewSpinner(),
 	}
 }
 
 func (m *model) Init() engine.Msg {
-	return nil
+	return m.spinner.Init()
 }
 
 func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
@@ -54,11 +66,13 @@ func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 		m.height = msg.Height
 		m.menu, _ = m.menu.Update(msg)
 		if m.gameSpace == nil {
-			m.gameSpace = NewGameRenderer(msg.Width, msg.Height-m.hud.Height())
+			m.gameSpace = NewGameRenderer(msg.Width-1, msg.Height-m.hud.Height()-1)
 		} else {
-			m.gameSpace.UpdateSize(msg.Width, msg.Height-m.hud.Height())
+			m.gameSpace.UpdateSize(msg.Width-1, msg.Height-m.hud.Height()-1)
 		}
 		*m.hud, _ = m.hud.Update(msg)
+		// Pass through size changes to spinner as well
+		m.spinner, _ = m.spinner.Update(msg)
 
 	case engine.KeyMsg:
 		switch msg.Rune {
@@ -68,6 +82,14 @@ func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 				return m, nil
 			}
 			return m, engine.Quit
+		case 'n':
+			// Demo: trigger transition to next stage/world
+			if m.state == stateGame {
+				if _, _, ok := m.game.PeekNext(); ok {
+					m.state = stateTransition
+					return m, m.spinner.Init()
+				}
+			}
 		case '\r', '\n', ' ': // Enter key
 			if m.state == stateMenu {
 				selected := m.menu.GetSelected()
@@ -90,10 +112,18 @@ func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 		}
 
 	default:
-		if m.state == stateGame {
-			// var cmd engine.Cmd
-			// m.gameSpace, cmd = m.gameSpace.Update(msg)
-			// return m, cmd
+		if m.state == stateTransition {
+			// Advance spinner frames
+			var cmd engine.Cmd
+			m.spinner, cmd = m.spinner.Update(msg)
+			// After a short time tick, perform the actual advance once
+			if _, isTick := msg.(engine.TickMsg); isTick {
+				// Move to next stage/world
+				_ = m.game.Advance()
+				m.state = stateGame
+				return m, nil
+			}
+			return m, cmd
 		}
 	}
 
@@ -101,6 +131,13 @@ func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 }
 
 func (m *model) View() string {
+	lang, err := engine.Load("fr")
+	if err != nil {
+		return "Error loading language"
+	}
+	WorldID := m.game.CurrentWorld.WorldID
+	StageId := m.game.CurrentStage.StageNb
+
 	switch m.state {
 	case stateMenu:
 		return m.menu.View()
@@ -112,10 +149,26 @@ func (m *model) View() string {
 			player.Stats.Level,
 			int(player.Stats.Exp),
 			player.Stats.NextLevelExp,
-			"Cyber District",
+			WorldID, // WorldID (placeholder)
+			StageId, // StageID (placeholder)
 		)
 		gameContent := m.gameSpace.RenderGameWorld(m.game.Player)
 		return m.hud.RenderWithContent(gameContent)
+	case stateTransition:
+		// Show loading/transition overlay with spinner and next location name
+		nextName, nameID, ok := m.game.PeekNext()
+		if !ok {
+			nextName = ""
+		}
+		title := "Loading"
+		if nextName != "" {
+			title = "Traveling to: " + lang.Text("level.world"+fmt.Sprint(nameID)+".name")
+		}
+		// force spinner to keep ticking
+		_, cmd := m.spinner.Update(engine.TickNow())
+		_ = cmd
+		content := title + "  " + m.spinner.View()
+		return m.hud.RenderWithContent(content)
 	default:
 		return "Unknown state"
 	}
