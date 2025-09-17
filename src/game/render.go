@@ -35,17 +35,24 @@ func NewGame() *model {
 	if err := loaders.LoadWorlds(); err != nil {
 		// Handle error gracefully - could log it or show an error message
 		// For now, we'll continue with empty cache
-
 	}
+
+	// Set up localization
+	locManager := engine.GetLocalizationManager()
+	locManager.SetLanguage("fr")
+
+	// Later, to change language for all components
+	//registry := ui.GetComponentRegistry()
+	//registry.ChangeLanguage("en")
 
 	// Create menu options
 	menuOptions := []ui.MenuOption{
-		{Label: "Start Game", Value: "start"},
-		{Label: "Settings", Value: "settings"},
-		{Label: "Quit", Value: "quit"},
+		{Label: locManager.Text("ui.menu.start"), Value: "start"},
+		{Label: locManager.Text("ui.menu.settings"), Value: "settings"},
+		{Label: locManager.Text("ui.menu.quit"), Value: "quit"},
 	}
 	// Load ASCII art from file
-	menu, err := ui.NewMenuWithArtFromFile("Game Options", menuOptions, "assets/logo.txt")
+	menu, err := ui.NewMenuWithArtFromFile(locManager.Text("ui.menu.mainmenu"), menuOptions, "assets/logo.txt")
 	if err != nil {
 		// If loading the ASCII art fails, fall back to a simple menu without art
 		menu = ui.NewMenu("", menuOptions)
@@ -143,20 +150,14 @@ func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 }
 
 func (m *model) View() string {
-	// Load language once and handle errors gracefully
-	lang, err := engine.Load("fr")
-	if err != nil {
-		lang = make(map[string]string) // Fallback to empty map
-	}
-
 	// Route to specific state handlers for better organization
 	switch m.state {
 	case stateMenu:
 		return m.renderMenuState()
 	case stateGame:
-		return m.renderGameState(lang)
+		return m.renderGameState()
 	case stateTransition:
-		return m.renderTransitionState(lang)
+		return m.renderTransitionState()
 	default:
 		return "Unknown state"
 	}
@@ -170,7 +171,7 @@ func (m *model) renderMenuState() string {
 }
 
 // renderGameState handles main game rendering with HUD and game world
-func (m *model) renderGameState(lang map[string]string) string {
+func (m *model) renderGameState() string {
 	// Update HUD with current player stats and location
 	m.updateHUDStats()
 
@@ -182,12 +183,12 @@ func (m *model) renderGameState(lang map[string]string) string {
 }
 
 // renderTransitionState handles loading/transition screen rendering
-func (m *model) renderTransitionState(lang map[string]string) string {
+func (m *model) renderTransitionState() string {
 	// Get next location information
 	nextName, nameID, ok := m.game.PeekNext()
 
 	// Create appropriate title
-	title := m.createTransitionTitle(nextName, nameID, ok, lang)
+	title := m.createTransitionTitle(nextName, nameID, ok)
 
 	// Update spinner animation
 	_, cmd := m.spinner.Update(engine.TickNow())
@@ -222,13 +223,14 @@ func (m *model) updateHUDStats() {
 }
 
 // createTransitionTitle creates appropriate title for transition screens
-func (m *model) createTransitionTitle(nextName string, nameID int, ok bool, lang map[string]string) string {
+func (m *model) createTransitionTitle(nextName string, nameID int, ok bool) string {
+	locManager := engine.GetLocalizationManager()
 	if !ok || nextName == "" {
-		return "Loading"
+		return locManager.Text("ui.menu.loading")
 	}
 
 	// Try to get translated name
-	if translatedName, exists := lang["level.world"+fmt.Sprint(nameID)+".name"]; exists {
+	if translatedName := locManager.Text(fmt.Sprintf("game.world" + fmt.Sprint(nameID) + ".name")); translatedName != "" {
 		return "Traveling to: " + translatedName
 	}
 

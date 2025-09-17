@@ -1,15 +1,60 @@
 {
-	"menu.title": "Project Red: RPG",
-	"menu.start": "Start Game",
-	"menu.quit": "Quit",
-	"menu.welcome": "Welcome, {name}",
-	"merchant.consumable.name": "Aethelgard",
-	"merchant.weapon.name": "Valerius",
-	"level.world1.name": "MEILAND",
-	"level.world1.stage1.name": "La fosse",
-	"level.world1.stage2.name": "Centre-Ville",
-	"level.world1.stage3.name": "Frontière NULL",
-	"level.world2.name": "CYBER DISTRICT",
-	"level.world2.stage1.name": "Secteur Alpha",
-	"level.world2.stage2.name": "Réseau Central"
+	"ui": {
+		"menu": {
+			"mainmenu": "Menu Principal",
+			"start": "Commencer une Partie",
+			"settings": "Paramètres",
+			"quit": "Quitter",
+			"loading": "Chargement..."
+		},
+		"hud": {
+			"health": "Points de Vie",
+			"level": "Niveau",
+			"experience": "Expérience",
+			"Location": "Lieu: {world} - {stage}",
+			"currency": "Monnaie: {amount}",
+			"world": "Monde",
+			"stage": "Étape"
+		},
+		"inventory": {
+			"title": "Inventaire",
+			"consumables": "Consommables",
+			"weapons": "Armes",
+			"implants": "Implants",
+			"close": "Fermer"
+		},
+		"combat": {
+			"attack": "Attaquer",
+			"defend": "Défendre",
+			"item": "Utiliser un objet",
+			"flee": "Fuir",
+			"damage": "{attacker} inflige {damage} points de dégâts à {defender}",
+			"heal": "{healer} soigne {amount} points de vie à {target}",
+			"miss": "{attacker} rate son attaque sur {defender}",
+			"critical": "Coup critique ! {attacker} inflige {damage} points de dégâts à {defender}"
+		}
+	},
+	"game": {
+		"levels": {
+			"world1": {
+				"name": "MEILAND",
+				"stages": {
+					"1": "La fosse",
+					"2": "Centre-Ville",
+					"3": "Frontière NULL"
+				}
+			},
+			"world2": {
+				"name": "CYBER DISTRICT",
+				"stages": {
+					"1": "Secteur Alpha",
+					"2": "Réseau Central"
+				}
+			}
+		},
+		"merchants": {
+			"consumable": "Aethelgard",
+			"weapon": "Valerius"
+		}
+	}
 }

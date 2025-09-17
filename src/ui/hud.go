@@ -109,10 +109,7 @@ func (h *HUD) Height() int {
 
 // View renders the HUD as a bottom-positioned component
 func (h *HUD) View() string {
-	lang, err := engine.Load("fr")
-	if err != nil {
-		return "Error loading language"
-	}
+	locManager := engine.GetLocalizationManager()
 
 	if h.width == 0 || h.termWidth == 0 {
 		return ""
@@ -157,14 +154,14 @@ func (h *HUD) View() string {
 	expBar := strings.Repeat("█", expFilled) + strings.Repeat("▒", barWidth-expFilled)
 
 	// Format the HUD content
-	healthText := fmt.Sprintf("HP: %d/%d", h.playerHealth, h.playerMaxHealth)
-	expText := fmt.Sprintf("EXP: %d/%d", h.playerExp, h.expToNextLevel)
-	levelText := fmt.Sprintf("Level %d", h.playerLevel)
+	healthText := fmt.Sprintf("%s: %d/%d", locManager.Text("ui.hud.health"), h.playerHealth, h.playerMaxHealth)
+	expText := fmt.Sprintf("%s: %d/%d", locManager.Text("ui.hud.experience"), h.playerExp, h.expToNextLevel)
+	levelText := fmt.Sprintf("%s %d", locManager.Text("ui.hud.level"), h.playerLevel)
 
 	// Build aligned World/Stage lines so their text starts at the same column
 	// Use localized names as primary source
-	worldName := lang.Text("level.world" + fmt.Sprint(h.worldID) + ".name")
-	stageName := lang.Text("level.world" + fmt.Sprint(h.worldID) + ".stage" + fmt.Sprint(h.stageID) + ".name")
+	worldName := locManager.Text("game.levels.world" + fmt.Sprint(h.worldID) + ".name")
+	stageName := locManager.Text("game.levels.world" + fmt.Sprint(h.worldID) + ".stages." + fmt.Sprint(h.stageID))
 
 	// If localized name is missing (shows as ⟦key⟧), fallback to manually set names
 	if strings.HasPrefix(worldName, "⟦") && strings.HasSuffix(worldName, "⟧") && h.worldName != "" {
@@ -174,8 +171,8 @@ func (h *HUD) View() string {
 		stageName = h.stageName
 	}
 
-	worldLabel := fmt.Sprintf("World %d:", h.worldID)
-	stageLabel := fmt.Sprintf("Stage %d:", h.stageID)
+	worldLabel := fmt.Sprintf("%s %d:", locManager.Text("ui.hud.world"), h.worldID)
+	stageLabel := fmt.Sprintf("%s %d:", locManager.Text("ui.hud.stage"), h.stageID)
 	labelWidth := len(worldLabel)
 	if len(stageLabel) > labelWidth {
 		labelWidth = len(stageLabel)
