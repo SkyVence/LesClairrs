@@ -9,5 +9,7 @@
 	"level.world1.stage1.name": "La fosse",
 	"level.world1.stage2.name": "Centre-Ville",
 	"level.world1.stage3.name": "Frontière NULL",
-	"level.world2.name": "CYBER DISTRICT"
+	"level.world2.name": "CYBER DISTRICT",
+	"level.world2.stage1.name": "Secteur Alpha",
+	"level.world2.stage2.name": "Réseau Central"
 }

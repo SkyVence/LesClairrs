@@ -23,6 +23,8 @@ type HUD struct {
 	expToNextLevel  int
 	worldID         int
 	stageID         int
+	worldName       string
+	stageName       string
 }
 
 // HUDStyles contains styling for the HUD
@@ -95,6 +97,12 @@ func (h *HUD) SetPlayerStats(health, maxHealth, level, exp, expToNext int, world
 	h.stageID = stageID
 }
 
+// SetLocation updates the world and stage names displayed in the HUD
+func (h *HUD) SetLocation(worldName, stageName string) {
+	h.worldName = worldName
+	h.stageName = stageName
+}
+
 func (h *HUD) Height() int {
 	return h.height
 }
@@ -154,8 +162,18 @@ func (h *HUD) View() string {
 	levelText := fmt.Sprintf("Level %d", h.playerLevel)
 
 	// Build aligned World/Stage lines so their text starts at the same column
+	// Use localized names as primary source
 	worldName := lang.Text("level.world" + fmt.Sprint(h.worldID) + ".name")
 	stageName := lang.Text("level.world" + fmt.Sprint(h.worldID) + ".stage" + fmt.Sprint(h.stageID) + ".name")
+
+	// If localized name is missing (shows as ⟦key⟧), fallback to manually set names
+	if strings.HasPrefix(worldName, "⟦") && strings.HasSuffix(worldName, "⟧") && h.worldName != "" {
+		worldName = h.worldName
+	}
+	if strings.HasPrefix(stageName, "⟦") && strings.HasSuffix(stageName, "⟧") && h.stageName != "" {
+		stageName = h.stageName
+	}
+
 	worldLabel := fmt.Sprintf("World %d:", h.worldID)
 	stageLabel := fmt.Sprintf("Stage %d:", h.stageID)
 	labelWidth := len(worldLabel)

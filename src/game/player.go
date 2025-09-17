@@ -71,3 +71,15 @@ func (p *Player) RemoveItemFromInventory(index int) bool {
 func (p *Player) GetPosition() (int, int) {
 	return p.Pos.X, p.Pos.Y
 }
+
+func (p *Player) Attack(enemy *Enemy) int {
+	damage := p.Stats.Force - enemy.Defense
+	if damage < 0 {
+		damage = 0
+	}
+	enemy.CurrentHP -= damage
+	if enemy.CurrentHP < 0 {
+		enemy.CurrentHP = 0
+	}
+	return damage
+}

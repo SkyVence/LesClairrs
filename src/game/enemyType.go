@@ -8,7 +8,5 @@ type Enemy struct {
 	Accuracy  int
 	MaxHP     int
 	CurrentHP int
-	Inventory []Item
-	Implants  [5]Implant // "tete", "brasD", etc - fixed size array
 	ExpReward int
 }

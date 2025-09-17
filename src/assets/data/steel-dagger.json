@@ -1,0 +1,20 @@
+{
+  "KeyName": "steel-dagger",
+  "Type": 0,
+  "Attacks": [
+    {
+      "KeyName": "stab",
+      "KeyDesc": "Quick stab attack",
+      "Damage": 10,
+      "Duration": 250,
+      "CoolDown": 800
+    },
+    {
+      "KeyName": "poison-strike",
+      "KeyDesc": "Poisoned blade attack",
+      "Damage": 8,
+      "Duration": 400,
+      "CoolDown": 2500
+    }
+  ]
+}

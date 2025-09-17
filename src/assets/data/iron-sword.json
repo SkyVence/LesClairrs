@@ -1,0 +1,20 @@
+{
+  "KeyName": "iron-sword",
+  "Type": 0,
+  "Attacks": [
+    {
+      "KeyName": "slash",
+      "KeyDesc": "A quick sword slash",
+      "Damage": 15,
+      "Duration": 500,
+      "CoolDown": 1000
+    },
+    {
+      "KeyName": "thrust",
+      "KeyDesc": "A powerful thrust attack",
+      "Damage": 25,
+      "Duration": 800,
+      "CoolDown": 2000
+    }
+  ]
+}

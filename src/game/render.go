@@ -29,15 +29,25 @@ type model struct {
 }
 
 func NewGame() *model {
+	// Initialize all worlds at startup
+	if err := LoadWorlds(); err != nil {
+		// Handle error gracefully - could log it or show an error message
+		// For now, we'll continue with empty cache
+
+	}
+
 	// Create menu options
 	menuOptions := []ui.MenuOption{
 		{Label: "Start Game", Value: "start"},
 		{Label: "Settings", Value: "settings"},
 		{Label: "Quit", Value: "quit"},
 	}
-
-	menu := ui.NewMenu("ProjectRed: RPG", menuOptions)
-
+	// Load ASCII art from file
+	menu, err := ui.NewMenuWithArtFromFile("Game Options", menuOptions, "assets/logo.txt")
+	if err != nil {
+		// If loading the ASCII art fails, fall back to a simple menu without art
+		menu = ui.NewMenu("", menuOptions)
+	}
 	return &model{
 		state: stateMenu,
 		menu:  menu,
@@ -152,6 +162,12 @@ func (m *model) View() string {
 			WorldID, // WorldID (placeholder)
 			StageId, // StageID (placeholder)
 		)
+
+		// Set location names from the actual loaded world data
+		if m.game.CurrentWorld != nil && m.game.CurrentStage != nil {
+			m.hud.SetLocation(m.game.CurrentWorld.Name, m.game.CurrentStage.Name)
+		}
+
 		gameContent := m.gameSpace.RenderGameWorld(m.game.Player)
 		return m.hud.RenderWithContent(gameContent)
 	case stateTransition:

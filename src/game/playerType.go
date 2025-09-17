@@ -5,14 +5,14 @@ type rarity int
 type ItemType int
 
 const (
-	Upgrade = iota
+	Upgrade ItemType = iota
 	Utility
 	Consumable
 	Boost
 )
 
 const (
-	Head = iota
+	Head bodyParts = iota
 	Body
 	ArmsL
 	ArmsR
@@ -20,7 +20,7 @@ const (
 )
 
 const (
-	Tier1 = iota
+	Tier1 rarity = iota
 	Tier2
 	Tier3
 )

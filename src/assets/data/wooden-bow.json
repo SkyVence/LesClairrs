@@ -1,0 +1,20 @@
+{
+  "KeyName": "wooden-bow",
+  "Type": 1,
+  "Attacks": [
+    {
+      "KeyName": "arrow-shot",
+      "KeyDesc": "Shoot an arrow",
+      "Damage": 12,
+      "Duration": 300,
+      "CoolDown": 1500
+    },
+    {
+      "KeyName": "power-shot",
+      "KeyDesc": "A charged powerful shot",
+      "Damage": 20,
+      "Duration": 1000,
+      "CoolDown": 3000
+    }
+  ]
+}

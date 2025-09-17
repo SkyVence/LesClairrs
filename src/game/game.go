@@ -22,8 +22,13 @@ type Game struct {
 }
 
 func NewWorld(WorldID int) *World {
-	if w, err := LoadWorld(WorldID); err == nil {
-		return &w
+	// Ensure worlds are loaded
+	if err := LoadWorlds(); err != nil {
+		return &World{WorldID: WorldID}
+	}
+
+	if world, exists := GetWorld(WorldID); exists {
+		return &world
 	}
 	return &World{WorldID: WorldID}
 }
@@ -33,8 +38,7 @@ func NewGameInstance(selectedClass Class) *Game {
 	world := NewWorld(1)
 
 	// Hardcoded for now --> Probably will be changed if implementing save/load system
-	player := NewPlayer("Sam", selectedClass, Position{X: 1, Y: 1})
-
+	player := NewPlayer("Sam", selectedClass, Position{X: 1, Y: 1})	
 	return &Game{
 		Player:       player,
 		CurrentWorld: world,
@@ -71,9 +75,10 @@ func (w *World) NextWorld() *World {
 		return nil
 	}
 	nextWorldID := w.WorldID + 1
-	nextWorld := NewWorld(nextWorldID)
-	if nextWorld != nil && len(nextWorld.Stages) > 0 {
-		return nextWorld
+
+	// Use cached world data instead of loading from file
+	if nextWorld, exists := GetWorld(nextWorldID); exists {
+		return &nextWorld
 	}
 	return nil
 }
