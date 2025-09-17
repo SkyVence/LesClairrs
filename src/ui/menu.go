@@ -42,6 +42,12 @@ type Menu struct {
 	selected int
 	width    int
 	height   int
+	Class    string
+}
+
+// Message émis quand on valide une option
+type MenuSelectMsg struct {
+	Option MenuOption
 }
 
 func NewMenu(title string, options []MenuOption, styles ...MenuStyles) Menu {
@@ -49,7 +55,6 @@ func NewMenu(title string, options []MenuOption, styles ...MenuStyles) Menu {
 	if len(styles) > 0 {
 		menuStyles = styles[0]
 	}
-
 	return Menu{
 		Title:   title,
 		Options: options,
@@ -57,7 +62,7 @@ func NewMenu(title string, options []MenuOption, styles ...MenuStyles) Menu {
 	}
 }
 
-func (m Menu) Update(msg engine.Msg) (Menu, engine.Cmd) {
+func (m Menu) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 	switch msg := msg.(type) {
 	case engine.SizeMsg:
 		m.width = msg.Width
@@ -72,6 +77,11 @@ func (m Menu) Update(msg engine.Msg) (Menu, engine.Cmd) {
 			if m.selected > 0 {
 				m.selected--
 			}
+		case '\n', '\r':
+			if len(m.Options) > 0 {
+				opt := m.Options[m.selected]
+				return m, func() engine.Msg { return MenuSelectMsg{Option: opt} }
+			}
 		}
 	}
 	return m, nil
@@ -82,33 +92,39 @@ func (m Menu) View() string {
 		return ""
 	}
 
-	// Build menu content
-	var menuItems []string
+	var lines []string
+	lines = append(lines, m.Styles.Title.Render(m.Title))
+	lines = append(lines, "")
 
-	// Add title
-	menuItems = append(menuItems, m.Styles.Title.Render(m.Title))
-	menuItems = append(menuItems, "") // Empty line
-
-	// Add options
 	for i, option := range m.Options {
-		var item string
-		if i == m.selected {
-			item = m.Styles.Selected.Render("▶ " + option.Label)
-		} else {
-			item = m.Styles.Normal.Render("  " + option.Label)
+		// Option "class" -> label dynamique
+		label := option.Label
+		if option.Value == "class" {
+			label = "Class" // juste "Class" tout court
 		}
-		menuItems = append(menuItems, item)
+
+		if i == m.selected {
+			lines = append(lines, m.Styles.Selected.Render("▶ "+label))
+		} else {
+			lines = append(lines, m.Styles.Normal.Render("  "+label))
+		}
 	}
 
-	// Join menu items
-	menu := lipgloss.JoinVertical(lipgloss.Left, menuItems...)
+	menu := lipgloss.JoinVertical(lipgloss.Left, lines...)
 
-	// Center the menu on screen
 	return lipgloss.Place(
 		m.width, m.height,
 		lipgloss.Center, lipgloss.Center,
 		menu,
 	)
+}
+
+func (m Menu) Init() engine.Msg {
+	return nil
+}
+
+func (m *Menu) SetClass(name string) {
+	m.Class = name
 }
 
 func (m Menu) GetSelected() MenuOption {

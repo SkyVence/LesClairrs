@@ -11,18 +11,20 @@ type gameState int
 
 const (
 	stateMenu gameState = iota
+	stateClassSelection
 	stateGame
 	stateSettings
 )
 
 type model struct {
-	state     gameState
-	menu      ui.Menu
-	game      *Game
-	gameSpace *GameRenderer
-	hud       *ui.HUD
-	width     int
-	height    int
+	state          gameState
+	menu           ui.Menu
+	classSelection ui.ClassSelection
+	game           *Game
+	gameSpace      *GameRenderer
+	hud            *ui.HUD
+	width          int
+	height         int
 }
 
 func NewGame() *model {
@@ -30,16 +32,51 @@ func NewGame() *model {
 	menuOptions := []ui.MenuOption{
 		{Label: "Start Game", Value: "start"},
 		{Label: "Settings", Value: "settings"},
+		{Label: "Class", Value: "class"},
 		{Label: "Quit", Value: "quit"},
 	}
 
 	menu := ui.NewMenu("ProjectRed: RPG", menuOptions)
 
+	// Seulement les 3 classes originales
+	classes := []ui.ClassCard{
+		{
+			Name:        "D0C",
+			Description: "Un robot médical intelligent, précis et polyvalent.",
+			MaxHP:       90,
+			Force:       10,
+			Speed:       12,
+			Defense:     10,
+			Accuracy:    22,
+		},
+		{
+			Name:        "APP",
+			Description: "Un robot apprenti furtif et agile.",
+			MaxHP:       80,
+			Force:       14,
+			Speed:       22,
+			Defense:     8,
+			Accuracy:    18,
+		},
+		{
+			Name:        "PER",
+			Description: "Un robot gardien robuste et puissant.",
+			MaxHP:       120,
+			Force:       22,
+			Speed:       10,
+			Defense:     18,
+			Accuracy:    10,
+		},
+	}
+
+	classSelection := ui.NewClassSelection("Choisissez votre classe", classes)
+
 	return &model{
-		state: stateMenu,
-		menu:  menu,
-		game:  NewGameInstance(),
-		hud:   ui.NewHud(),
+		state:          stateMenu,
+		menu:           menu,
+		classSelection: classSelection,
+		game:           NewGameInstance(),
+		hud:            ui.NewHud(),
 	}
 }
 
@@ -52,13 +89,41 @@ func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 	case engine.SizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.menu, _ = m.menu.Update(msg)
+		// Correction: gérer les valeurs de retour multiples correctement
+		updatedMenuModel, _ := m.menu.Update(msg)
+		if updatedMenu, ok := updatedMenuModel.(ui.Menu); ok {
+			m.menu = updatedMenu
+		}
+		m.classSelection, _ = m.classSelection.Update(msg)
 		if m.gameSpace == nil {
 			m.gameSpace = NewGameRenderer(msg.Width, msg.Height-m.hud.Height())
 		} else {
 			m.gameSpace.UpdateSize(msg.Width, msg.Height-m.hud.Height())
 		}
 		*m.hud, _ = m.hud.Update(msg)
+
+	case ui.MenuSelectMsg:
+		switch msg.Option.Value {
+		case "start":
+			m.state = stateGame
+			return m, nil
+		case "class":
+			m.state = stateClassSelection
+			return m, nil
+		case "settings":
+			m.state = stateSettings
+			return m, nil
+		case "quit":
+			return m, engine.Quit
+		}
+
+	case ui.ClassChosenMsg:
+		m.state = stateMenu
+		return m, nil
+
+	case ui.ClassSelectionCanceledMsg:
+		m.state = stateMenu
+		return m, nil
 
 	case engine.KeyMsg:
 		switch msg.Rune {
@@ -68,32 +133,24 @@ func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 				return m, nil
 			}
 			return m, engine.Quit
-		case '\r', '\n', ' ': // Enter key
-			if m.state == stateMenu {
-				selected := m.menu.GetSelected()
-				switch selected.Value {
-				case "start":
-					m.state = stateGame
-					return m, nil
-				case "quit":
-					return m, engine.Quit
-				}
-			}
 		case '↑', '↓', '←', '→':
 			if m.state == stateGame {
 				m.game.Player.Move(msg.Rune, m.gameSpace.width, m.gameSpace.height)
 			}
 		}
 
-		if m.state == stateMenu {
-			m.menu, _ = m.menu.Update(msg)
-		}
-
-	default:
-		if m.state == stateGame {
-			// var cmd engine.Cmd
-			// m.gameSpace, cmd = m.gameSpace.Update(msg)
-			// return m, cmd
+		// Déléguer les messages aux composants appropriés
+		switch m.state {
+		case stateMenu:
+			updatedModel, cmd := m.menu.Update(msg)
+			if updatedMenu, ok := updatedModel.(ui.Menu); ok {
+				m.menu = updatedMenu
+			}
+			return m, cmd
+		case stateClassSelection:
+			updatedClassSelection, cmd := m.classSelection.Update(msg)
+			m.classSelection = updatedClassSelection
+			return m, cmd
 		}
 	}
 
@@ -104,6 +161,8 @@ func (m *model) View() string {
 	switch m.state {
 	case stateMenu:
 		return m.menu.View()
+	case stateClassSelection:
+		return m.classSelection.View()
 	case stateGame:
 		player := m.game.Player
 		m.hud.SetPlayerStats(
