@@ -1,4 +1,19 @@
-package game
+// Package loaders handles asset loading and caching for ProjectRed RPG.
+//
+// This package provides functionality for loading game data from various sources:
+//   - JSON file parsing for worlds and levels
+//   - Asset caching for performance
+//   - Data validation and error handling
+//   - Thread-safe access to cached data
+//
+// The package uses a repository pattern with caching to provide fast access
+// to game data while abstracting the underlying storage format.
+//
+// Example usage:
+//
+//	err := loaders.LoadWorlds()
+//	world, exists := loaders.GetWorld(1)
+package loaders
 
 import (
 	"encoding/json"
@@ -8,10 +23,12 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"projectred-rpg.com/game/types"
 )
 
 var (
-	worldCache   map[int]World
+	worldCache   map[int]types.World
 	worldMutex   sync.RWMutex
 	worldsLoaded bool = false
 )
@@ -25,7 +42,7 @@ func LoadWorlds() error {
 		return nil // Already loaded
 	}
 
-	worldCache = make(map[int]World)
+	worldCache = make(map[int]types.World)
 
 	// Get the path to the assets/levels directory
 	levelsPath := filepath.Join("assets", "levels")
@@ -48,7 +65,7 @@ func LoadWorlds() error {
 		}
 
 		// Parse the JSON into a World struct
-		var world World
+		var world types.World
 		if err := json.Unmarshal(data, &world); err != nil {
 			return fmt.Errorf("failed to parse world file %s: %w", path, err)
 		}
@@ -73,7 +90,7 @@ func LoadWorlds() error {
 }
 
 // GetWorld retrieves a world by its ID
-func GetWorld(worldID int) (World, bool) {
+func GetWorld(worldID int) (types.World, bool) {
 	worldMutex.RLock()
 	defer worldMutex.RUnlock()
 
@@ -82,12 +99,12 @@ func GetWorld(worldID int) (World, bool) {
 }
 
 // GetAllWorlds returns a copy of all loaded worlds
-func GetAllWorlds() map[int]World {
+func GetAllWorlds() map[int]types.World {
 	worldMutex.RLock()
 	defer worldMutex.RUnlock()
 
 	// Return a copy to prevent external modification
-	result := make(map[int]World)
+	result := make(map[int]types.World)
 	for k, v := range worldCache {
 		result[k] = v
 	}
@@ -95,13 +112,13 @@ func GetAllWorlds() map[int]World {
 }
 
 // GetStage retrieves a specific stage from a world
-func GetStage(worldID, stageNb int) (Stage, bool) {
+func GetStage(worldID, stageNb int) (types.Stage, bool) {
 	worldMutex.RLock()
 	defer worldMutex.RUnlock()
 
 	world, exists := worldCache[worldID]
 	if !exists {
-		return Stage{}, false
+		return types.Stage{}, false
 	}
 
 	for _, stage := range world.Stages {
@@ -109,7 +126,7 @@ func GetStage(worldID, stageNb int) (Stage, bool) {
 			return stage, true
 		}
 	}
-	return Stage{}, false
+	return types.Stage{}, false
 }
 
 // GetWorldCount returns the number of loaded worlds
@@ -135,28 +152,28 @@ func GetStageCount(worldID int) int {
 // Legacy functions for backward compatibility
 
 // LoadWorld loads a single world definition (legacy function)
-func LoadWorld(id int) (World, error) {
+func LoadWorld(id int) (types.World, error) {
 	// Ensure worlds are loaded
 	if err := LoadWorlds(); err != nil {
-		return World{}, err
+		return types.World{}, err
 	}
 
 	world, exists := GetWorld(id)
 	if !exists {
-		return World{}, fmt.Errorf("world %d not found", id)
+		return types.World{}, fmt.Errorf("world %d not found", id)
 	}
 	return world, nil
 }
 
 // LoadLevels loads worlds sequentially (legacy function)
-func LoadLevels() []World {
+func LoadLevels() []types.World {
 	// Ensure worlds are loaded
 	if err := LoadWorlds(); err != nil {
-		return []World{}
+		return []types.World{}
 	}
 
 	allWorlds := GetAllWorlds()
-	worlds := make([]World, 0, len(allWorlds))
+	worlds := make([]types.World, 0, len(allWorlds))
 
 	// Return worlds in order by WorldID
 	for i := 1; i <= len(allWorlds); i++ {

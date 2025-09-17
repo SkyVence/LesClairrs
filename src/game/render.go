@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"projectred-rpg.com/engine"
+	"projectred-rpg.com/game/loaders"
+	"projectred-rpg.com/game/types"
 	"projectred-rpg.com/ui"
 )
 
@@ -30,7 +32,7 @@ type model struct {
 
 func NewGame() *model {
 	// Initialize all worlds at startup
-	if err := LoadWorlds(); err != nil {
+	if err := loaders.LoadWorlds(); err != nil {
 		// Handle error gracefully - could log it or show an error message
 		// For now, we'll continue with empty cache
 
@@ -51,7 +53,7 @@ func NewGame() *model {
 	return &model{
 		state: stateMenu,
 		menu:  menu,
-		game: NewGameInstance(Class{
+		game: NewGameInstance(types.Class{
 			Name:        "Cyber-Samurai",
 			MaxHP:       100,
 			Force:       1,
@@ -204,7 +206,7 @@ func NewGameRenderer(width, height int) *GameRenderer {
 	}
 }
 
-func (gr *GameRenderer) RenderGameWorld(player *Player) string {
+func (gr *GameRenderer) RenderGameWorld(player *types.Player) string {
 	if gr.width <= 0 || gr.height <= 0 {
 		return "Screen too small"
 	}
@@ -242,7 +244,7 @@ func (gr *GameRenderer) RenderGameWorld(player *Player) string {
 	}
 
 	// Draw player sprite
-	spriteLines := strings.Split(player.sprite, "\n")
+	spriteLines := strings.Split(player.GetSprite(), "\n")
 	playerX, playerY := player.GetPosition()
 
 	for i, line := range spriteLines {

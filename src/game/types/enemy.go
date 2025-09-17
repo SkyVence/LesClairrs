@@ -1,4 +1,4 @@
-package game
+package types
 
 type Enemy struct {
 	Name      string
