@@ -63,15 +63,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          # The body of the release. We read the content from the file generated in the previous step.
           body_path: RELEASE-NOTES.md
-          
-          # The name of the release. It will be the same as the tag name.
           name: Release ${{ github.ref_name }}
-          
-          # The files to upload as release assets.
-          # The wildcard will match all the binaries we built in the previous step.
           files: |
             LaClair-linux
             LaClair.exe
-           LaClair-darwin
+            LaClair-darwin
