@@ -1,5 +1,28 @@
 package game
 
+import (
+	"fmt"
+)
+
+// Structures simplifiées sans Ebiten
+type Position struct {
+	X, Y int
+}
+
+type Class struct {
+	Name string
+}
+
+type Player struct {
+	Name     string
+	Class    Class
+	Position Position
+}
+
+type Enemy struct {
+	Name string
+}
+
 type Stage struct {
 	WorldID        int
 	StageNb        int
@@ -19,26 +42,49 @@ type Game struct {
 	Player       *Player
 	CurrentWorld *World
 	CurrentStage *Stage
+	dialogue     *DialogueBox
+}
+
+func NewPlayer(name string, class Class, pos Position) *Player {
+	return &Player{
+		Name:     name,
+		Class:    class,
+		Position: pos,
+	}
 }
 
 func NewWorld(WorldID int) *World {
-	if w, err := LoadWorld(WorldID); err == nil {
-		return &w
+	return &World{
+		WorldID: WorldID,
+		Stages:  []Stage{}, // Initialiser avec des stages vides pour éviter les erreurs
 	}
-	return &World{WorldID: WorldID}
 }
 
 func NewGameInstance(selectedClass Class) *Game {
-
 	world := NewWorld(1)
 
-	// Hardcoded for now --> Probably will be changed if implementing save/load system
+	// Ajouter au moins un stage pour éviter les erreurs
+	world.Stages = append(world.Stages, Stage{
+		WorldID:        1,
+		StageNb:        1,
+		Name:           "Premier Stage",
+		Enemies:        []Enemy{},
+		ClearingReward: 100,
+	})
+
 	player := NewPlayer("Sam", selectedClass, Position{X: 1, Y: 1})
+
+	dialogue := NewDialogueBox()
+	err := dialogue.LoadDialogues("fr.json") // ou le chemin vers votre fichier JSON
+	if err != nil {
+		fmt.Printf("Erreur chargement dialogues: %v\n", err)
+	}
 
 	return &Game{
 		Player:       player,
 		CurrentWorld: world,
 		CurrentStage: &world.Stages[0],
+		dialogue:     dialogue,
 	}
 }
 
@@ -137,4 +183,30 @@ func (g *Game) Advance() bool {
 		}
 	}
 	return false
+}
+
+// Méthodes pour le dialogue terminal UNIQUEMENT
+func (g *Game) StartDialogue() {
+	if g.dialogue != nil {
+		g.dialogue.StartDialogue()
+	}
+}
+
+func (g *Game) ShowDialogueMenu() {
+	fmt.Println("\n=== SYSTÈME DE DIALOGUE ===")
+	fmt.Println("1. Démarrer les dialogues")
+	fmt.Println("2. Retour au jeu")
+	fmt.Print("Votre choix: ")
+
+	var choice int
+	fmt.Scanln(&choice)
+
+	switch choice {
+	case 1:
+		g.StartDialogue()
+	case 2:
+		return
+	default:
+		fmt.Println("Choix invalide.")
+	}
 }
