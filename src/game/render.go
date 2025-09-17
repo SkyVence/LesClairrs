@@ -143,53 +143,97 @@ func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 }
 
 func (m *model) View() string {
+	// Load language once and handle errors gracefully
 	lang, err := engine.Load("fr")
 	if err != nil {
-		return "Error loading language"
+		lang = make(map[string]string) // Fallback to empty map
 	}
-	WorldID := m.game.CurrentWorld.WorldID
-	StageId := m.game.CurrentStage.StageNb
 
+	// Route to specific state handlers for better organization
 	switch m.state {
 	case stateMenu:
-		return m.menu.View()
+		return m.renderMenuState()
 	case stateGame:
-		player := m.game.Player
-		m.hud.SetPlayerStats(
-			player.Stats.CurrentHP,
-			player.Stats.MaxHP,
-			player.Stats.Level,
-			int(player.Stats.Exp),
-			player.Stats.NextLevelExp,
-			WorldID, // WorldID (placeholder)
-			StageId, // StageID (placeholder)
-		)
-
-		// Set location names from the actual loaded world data
-		if m.game.CurrentWorld != nil && m.game.CurrentStage != nil {
-			m.hud.SetLocation(m.game.CurrentWorld.Name, m.game.CurrentStage.Name)
-		}
-
-		gameContent := m.gameSpace.RenderGameWorld(m.game.Player)
-		return m.hud.RenderWithContent(gameContent)
+		return m.renderGameState(lang)
 	case stateTransition:
-		// Show loading/transition overlay with spinner and next location name
-		nextName, nameID, ok := m.game.PeekNext()
-		if !ok {
-			nextName = ""
-		}
-		title := "Loading"
-		if nextName != "" {
-			title = "Traveling to: " + lang.Text("level.world"+fmt.Sprint(nameID)+".name")
-		}
-		// force spinner to keep ticking
-		_, cmd := m.spinner.Update(engine.TickNow())
-		_ = cmd
-		content := title + "  " + m.spinner.View()
-		return m.hud.RenderWithContent(content)
+		return m.renderTransitionState(lang)
 	default:
 		return "Unknown state"
 	}
+}
+
+// Separate rendering methods for better organization and maintainability
+
+// renderMenuState handles menu state rendering
+func (m *model) renderMenuState() string {
+	return m.menu.View()
+}
+
+// renderGameState handles main game rendering with HUD and game world
+func (m *model) renderGameState(lang map[string]string) string {
+	// Update HUD with current player stats and location
+	m.updateHUDStats()
+
+	// Render game world content
+	gameContent := m.gameSpace.RenderGameWorld(m.game.Player)
+
+	// Combine HUD with game content
+	return m.hud.RenderWithContent(gameContent)
+}
+
+// renderTransitionState handles loading/transition screen rendering
+func (m *model) renderTransitionState(lang map[string]string) string {
+	// Get next location information
+	nextName, nameID, ok := m.game.PeekNext()
+
+	// Create appropriate title
+	title := m.createTransitionTitle(nextName, nameID, ok, lang)
+
+	// Update spinner animation
+	_, cmd := m.spinner.Update(engine.TickNow())
+	_ = cmd
+
+	// Combine title with spinner
+	content := title + "  " + m.spinner.View()
+	return m.hud.RenderWithContent(content)
+}
+
+// updateHUDStats updates HUD with current player stats and location info
+func (m *model) updateHUDStats() {
+	player := m.game.Player
+	worldID := m.game.CurrentWorld.WorldID
+	stageID := m.game.CurrentStage.StageNb
+
+	// Set player statistics
+	m.hud.SetPlayerStats(
+		player.Stats.CurrentHP,
+		player.Stats.MaxHP,
+		player.Stats.Level,
+		int(player.Stats.Exp),
+		player.Stats.NextLevelExp,
+		worldID,
+		stageID,
+	)
+
+	// Set location names from loaded world data
+	if m.game.CurrentWorld != nil && m.game.CurrentStage != nil {
+		m.hud.SetLocation(m.game.CurrentWorld.Name, m.game.CurrentStage.Name)
+	}
+}
+
+// createTransitionTitle creates appropriate title for transition screens
+func (m *model) createTransitionTitle(nextName string, nameID int, ok bool, lang map[string]string) string {
+	if !ok || nextName == "" {
+		return "Loading"
+	}
+
+	// Try to get translated name
+	if translatedName, exists := lang["level.world"+fmt.Sprint(nameID)+".name"]; exists {
+		return "Traveling to: " + translatedName
+	}
+
+	// Fallback to original name
+	return "Traveling to: " + nextName
 }
 
 // Game space renderer
@@ -211,7 +255,20 @@ func (gr *GameRenderer) RenderGameWorld(player *types.Player) string {
 		return "Screen too small"
 	}
 
-	// Create a 2D grid for the game world
+	// Initialize game grid
+	grid := gr.initializeGrid()
+
+	// Render in organized layers
+	gr.renderBackground(grid)
+	gr.renderBorders(grid)
+	gr.renderPlayer(grid, player)
+
+	// Convert grid to string efficiently
+	return gr.gridToString(grid)
+}
+
+// initializeGrid creates the base grid for rendering
+func (gr *GameRenderer) initializeGrid() [][]rune {
 	grid := make([][]rune, gr.height)
 	for i := range grid {
 		grid[i] = make([]rune, gr.width)
@@ -219,8 +276,21 @@ func (gr *GameRenderer) RenderGameWorld(player *types.Player) string {
 			grid[i][j] = ' '
 		}
 	}
+	return grid
+}
 
-	// Draw borders
+// renderBackground creates background patterns and terrain
+func (gr *GameRenderer) renderBackground(grid [][]rune) {
+	// Simple background pattern - can be enhanced later
+	for i := 1; i < gr.height-1; i++ {
+		for j := 1; j < gr.width-1; j++ {
+			grid[i][j] = '▒'
+		}
+	}
+}
+
+// renderBorders draws the game area borders
+func (gr *GameRenderer) renderBorders(grid [][]rune) {
 	for i := 0; i < gr.height; i++ {
 		if i == 0 || i == gr.height-1 {
 			for j := 0; j < gr.width; j++ {
@@ -242,8 +312,10 @@ func (gr *GameRenderer) RenderGameWorld(player *types.Player) string {
 			grid[i][gr.width-1] = '│'
 		}
 	}
+}
 
-	// Draw player sprite
+// renderPlayer draws the player sprite on the grid
+func (gr *GameRenderer) renderPlayer(grid [][]rune, player *types.Player) {
 	spriteLines := strings.Split(player.GetSprite(), "\n")
 	playerX, playerY := player.GetPosition()
 
@@ -258,15 +330,39 @@ func (gr *GameRenderer) RenderGameWorld(player *types.Player) string {
 			}
 		}
 	}
+}
 
-	// Convert grid to a single string
+// gridToString converts the grid to a string efficiently
+func (gr *GameRenderer) gridToString(grid [][]rune) string {
 	var builder strings.Builder
+	builder.Grow(gr.width * gr.height) // Pre-allocate capacity
+
 	for _, row := range grid {
 		builder.WriteString(string(row))
 		builder.WriteString("\n")
 	}
 
 	return strings.TrimRight(builder.String(), "\n")
+}
+
+// Extension methods for future systems - easy to implement when needed
+
+// renderEnemies - placeholder for enemy rendering system
+func (gr *GameRenderer) renderEnemies(grid [][]rune, enemies []types.Enemy) {
+	// TODO: Implement when enemies have position data
+	// This method provides a clear extension point for enemy rendering
+}
+
+// renderItems - placeholder for item rendering system
+func (gr *GameRenderer) renderItems(grid [][]rune, items []interface{}) {
+	// TODO: Implement when item system is added
+	// This method provides a clear extension point for item rendering
+}
+
+// renderEffects - placeholder for visual effects system
+func (gr *GameRenderer) renderEffects(grid [][]rune) {
+	// TODO: Implement for particle effects, animations, etc.
+	// This method provides a clear extension point for effects
 }
 
 func (gr *GameRenderer) UpdateSize(width, height int) {
