@@ -1,10 +1,10 @@
-package main
+package engine
 
 import (
-	"embed"
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 )
 
@@ -12,12 +12,9 @@ type Catalog map[string]string
 
 var ph = regexp.MustCompile(`\{[A-Za-z0-9_.-]+\}`)
 
-//go:embed assets/interface/*.json
-var efs embed.FS
-
 func Load(lang string) (Catalog, error) {
 	var c Catalog
-	b, err := efs.ReadFile("assets/interface/" + lang + ".json")
+	b, err := os.ReadFile("assets/interface/" + lang + ".json")
 	if err != nil {
 		log.Fatalf("read %s: %v", lang, err)
 		return nil, err

@@ -21,7 +21,8 @@ type HUD struct {
 	playerLevel     int
 	playerExp       int
 	expToNextLevel  int
-	location        string
+	worldID         int
+	stageID         int
 }
 
 // HUDStyles contains styling for the HUD
@@ -63,7 +64,8 @@ func NewHud() *HUD {
 		playerLevel:     1,
 		playerExp:       0,
 		expToNextLevel:  100,
-		location:        "Starting Area",
+		worldID:         1,
+		stageID:         1,
 	}
 }
 
@@ -83,13 +85,14 @@ func (h *HUD) Update(msg engine.Msg) (HUD, engine.Cmd) {
 }
 
 // SetPlayerStats updates the player statistics displayed in the HUD
-func (h *HUD) SetPlayerStats(health, maxHealth, level, exp, expToNext int, location string) {
+func (h *HUD) SetPlayerStats(health, maxHealth, level, exp, expToNext int, worldID int, stageID int) {
 	h.playerHealth = health
 	h.playerMaxHealth = maxHealth
 	h.playerLevel = level
 	h.playerExp = exp
 	h.expToNextLevel = expToNext
-	h.location = location
+	h.worldID = worldID
+	h.stageID = stageID
 }
 
 func (h *HUD) Height() int {
@@ -98,6 +101,11 @@ func (h *HUD) Height() int {
 
 // View renders the HUD as a bottom-positioned component
 func (h *HUD) View() string {
+	lang, err := engine.Load("fr")
+	if err != nil {
+		return "Error loading language"
+	}
+
 	if h.width == 0 || h.termWidth == 0 {
 		return ""
 	}
@@ -144,7 +152,18 @@ func (h *HUD) View() string {
 	healthText := fmt.Sprintf("HP: %d/%d", h.playerHealth, h.playerMaxHealth)
 	expText := fmt.Sprintf("EXP: %d/%d", h.playerExp, h.expToNextLevel)
 	levelText := fmt.Sprintf("Level %d", h.playerLevel)
-	locationText := h.location
+
+	// Build aligned World/Stage lines so their text starts at the same column
+	worldName := lang.Text("level.world" + fmt.Sprint(h.worldID) + ".name")
+	stageName := lang.Text("level.world" + fmt.Sprint(h.worldID) + ".stage" + fmt.Sprint(h.stageID) + ".name")
+	worldLabel := fmt.Sprintf("World %d:", h.worldID)
+	stageLabel := fmt.Sprintf("Stage %d:", h.stageID)
+	labelWidth := len(worldLabel)
+	if len(stageLabel) > labelWidth {
+		labelWidth = len(stageLabel)
+	}
+	locationText := fmt.Sprintf("%-*s %s", labelWidth, worldLabel, worldName)
+	stageText := fmt.Sprintf("%-*s %s", labelWidth, stageLabel, stageName)
 
 	// Create the three sections
 	leftSection := "\n" + lipgloss.JoinVertical(lipgloss.Left,
@@ -152,8 +171,9 @@ func (h *HUD) View() string {
 		styles.HealthBar.Render(healthBar),
 	)
 
-	centerSection := "\n" + lipgloss.JoinVertical(lipgloss.Center,
-		styles.Text.Render(locationText),
+	centerSection := "\n" + lipgloss.JoinVertical(lipgloss.Left,
+		lipgloss.NewStyle().AlignHorizontal(lipgloss.Left).Render(locationText),
+		lipgloss.NewStyle().AlignHorizontal(lipgloss.Left).Render(stageText),
 	)
 
 	rightSection := styles.Text.Render(levelText) + "\n" + lipgloss.JoinVertical(lipgloss.Right,
@@ -180,7 +200,7 @@ func (h *HUD) View() string {
 	)
 
 	// Apply container styling with border
-	styledHUD := styles.Container.Width(h.width - 2).Render(hudContent)
+	styledHUD := styles.Container.Width(h.width - 3).Render(hudContent)
 
 	return styledHUD
 }

@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"strings"
 
 	"projectred-rpg.com/engine"
@@ -65,9 +66,9 @@ func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 		m.height = msg.Height
 		m.menu, _ = m.menu.Update(msg)
 		if m.gameSpace == nil {
-			m.gameSpace = NewGameRenderer(msg.Width, msg.Height-m.hud.Height())
+			m.gameSpace = NewGameRenderer(msg.Width-1, msg.Height-m.hud.Height()-1)
 		} else {
-			m.gameSpace.UpdateSize(msg.Width, msg.Height-m.hud.Height())
+			m.gameSpace.UpdateSize(msg.Width-1, msg.Height-m.hud.Height()-1)
 		}
 		*m.hud, _ = m.hud.Update(msg)
 		// Pass through size changes to spinner as well
@@ -130,8 +131,12 @@ func (m *model) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 }
 
 func (m *model) View() string {
-
-	WorldName, _ := m.game.CurrentLocation()
+	lang, err := engine.Load("fr")
+	if err != nil {
+		return "Error loading language"
+	}
+	WorldID := m.game.CurrentWorld.WorldID
+	StageId := m.game.CurrentStage.StageNb
 
 	switch m.state {
 	case stateMenu:
@@ -144,19 +149,20 @@ func (m *model) View() string {
 			player.Stats.Level,
 			int(player.Stats.Exp),
 			player.Stats.NextLevelExp,
-			WorldName,
+			WorldID, // WorldID (placeholder)
+			StageId, // StageID (placeholder)
 		)
 		gameContent := m.gameSpace.RenderGameWorld(m.game.Player)
 		return m.hud.RenderWithContent(gameContent)
 	case stateTransition:
 		// Show loading/transition overlay with spinner and next location name
-		nextName, _, ok := m.game.PeekNext()
+		nextName, nameID, ok := m.game.PeekNext()
 		if !ok {
 			nextName = ""
 		}
 		title := "Loading"
 		if nextName != "" {
-			title = "Traveling to: " + nextName
+			title = "Traveling to: " + lang.Text("level.world"+fmt.Sprint(nameID)+".name")
 		}
 		// force spinner to keep ticking
 		_, cmd := m.spinner.Update(engine.TickNow())
