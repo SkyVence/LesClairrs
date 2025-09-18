@@ -36,7 +36,7 @@ type Game struct {
 	CurrentStage *types.Stage  // Current stage within the active world
 
 	// Game systems - modular components handling specific game logic
-	Combat    *systems.CombatSystem    // Handles damage calculations and battle mechanics
+	//Combat    *systems.CombatSystem    // Handles damage calculations and battle mechanics
 	Inventory *systems.InventorySystem // Manages item operations and equipment
 	Movement  *systems.MovementSystem  // Processes player movement and collision detection
 }
@@ -69,7 +69,7 @@ func NewGameInstance(selectedClass types.Class) *Game {
 		CurrentWorld: world,
 		CurrentStage: &world.Stages[0],
 		// Initialize systems
-		Combat:    systems.NewCombatSystem(),
+		//Combat:    systems.NewCombatSystem(),
 		Inventory: systems.NewInventorySystem(),
 		Movement:  systems.NewMovementSystem(),
 	}

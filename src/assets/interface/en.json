@@ -7,6 +7,16 @@
 			"quit": "Quit",
 			"loading": "Loading..."
 		},
+		"settings": {
+			"menu": {
+				"title": "Settings",
+				"exampleSidebarTitle": "Example Sidebar Title",
+				"exampleSidebarDesc": "This is a description for the example sidebar.",
+				"language": "Language",
+				"en": "English",
+				"fr": "French"
+			}
+		},
 		"hud": {
 			"health": "Health Points",
 			"level": "Level",
@@ -35,6 +45,16 @@
 		},
 		"class": {
 			"menuname": "Class Selection",
+			"menu": {
+				"name": "Class Selection",
+				"description": "Description",
+				"maxhp": "Max Health Points",
+				"force": "Strength",
+				"speed": "Speed",
+				"defense": "Defense",
+				"accuracy": "Accuracy",
+				"startingStats": "Starting Statistics"
+			},
 			"doc": {
 				"name": "D0C",
 				"description": "An intelligent, precise and versatile medical robot."

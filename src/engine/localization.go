@@ -1,6 +1,10 @@
 package engine
 
-import "sync"
+import (
+	"os"
+	"strings"
+	"sync"
+)
 
 type LocalizationManager struct {
 	currentLang     string
@@ -55,4 +59,23 @@ func (lm *LocalizationManager) GetCurrentLanguage() string {
 	lm.mutex.RLock()
 	defer lm.mutex.RUnlock()
 	return lm.currentLang
+}
+
+func (lm *LocalizationManager) GetSupportedLanguages() ([]string, error) {
+	interfaceDir := "assets/interface"
+	files, err := os.ReadDir(interfaceDir)
+	if err != nil {
+		return nil, err
+	}
+
+	var languages []string
+	for _, file := range files {
+		if !file.IsDir() && strings.HasSuffix(file.Name(), ".json") {
+			// Extract language code by removing .json extension
+			lang := strings.TrimSuffix(file.Name(), ".json")
+			languages = append(languages, lang)
+		}
+	}
+
+	return languages, nil
 }

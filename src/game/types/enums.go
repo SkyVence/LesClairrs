@@ -26,3 +26,17 @@ const (
 	Consumable
 	Boost
 )
+
+type CombatState int
+
+const (
+	OutOfCombat CombatState = iota
+	Idle
+	Attacking
+	Defending
+	Stunned
+	Dead
+	Victory
+	EnemyTurn
+	PlayerTurn
+)

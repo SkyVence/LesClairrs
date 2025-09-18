@@ -7,6 +7,16 @@
 			"quit": "Quitter",
 			"loading": "Chargement..."
 		},
+		"settings": {
+			"menu": {
+				"title": "Paramètres",
+				"exampleSidebarTitle": "Exemple de Barre Latérale",
+				"exampleSidebarDesc": "Ceci est une description pour la barre latérale d'exemple.",
+				"language": "Langue",
+				"en": "Anglais",
+				"fr": "Français"
+			}
+		},
 		"hud": {
 			"health": "Points de Vie",
 			"level": "Niveau",
@@ -43,7 +53,6 @@
 				"defense": "Défense",
 				"accuracy": "Précision",
 				"startingStats": "Statistiques de Départ"
-
 			},
 			"doc":{
 				"name":"D0C",

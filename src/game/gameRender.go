@@ -20,6 +20,7 @@ type GameRender struct {
 	mainMenu       ui.Menu
 	classSelection ui.ClassMenu
 	hud            *ui.HUD
+	settingsMenu   ui.SettingsMenu
 
 	// Screen/Renderer Settings
 	screenWidth  int
@@ -74,6 +75,18 @@ func InitializeClassSelection(locManager *engine.LocalizationManager, classes []
 	return menu
 }
 
+func InitializeSettingsSelection(locManager *engine.LocalizationManager, languageOptions []string) ui.SettingsMenu {
+	menuOptions := []ui.SettingsMenuOption{}
+	for _, lang := range languageOptions {
+		menuOptions = append(menuOptions, ui.SettingsMenuOption{
+			Label: lang, // Keep the raw language code for localization lookup
+			Value: lang,
+		})
+	}
+	menu := ui.NewSettingsMenu(locManager.Text("ui.settings.menu.title"), menuOptions, locManager)
+	return menu
+}
+
 func initializeGameInstance() *Game {
 	// Define default player class - could be moved to config
 	defaultClass := types.Class{
@@ -101,6 +114,14 @@ func GameModel() *GameRender {
 	// Init class Select
 	classes := config.GetDefaultClasses()
 	classSelection := InitializeClassSelection(locManager, classes)
+	// Init settings menu
+	supportedLanguages, err := locManager.GetSupportedLanguages()
+	if err != nil {
+		supportedLanguages = []string{"fr"} // Fallback to French
+	}
+	settingsMenu := InitializeSettingsSelection(locManager, supportedLanguages)
+
+	// Initialize Game Systems
 	gameInstance := initializeGameInstance()
 	gameState := systems.NewGameState(systems.StateMainMenu)
 	movement := systems.NewMovementSystem()
@@ -111,6 +132,7 @@ func GameModel() *GameRender {
 
 		mainMenu:       menu,
 		hud:            hud,
+		settingsMenu:   settingsMenu,
 		classSelection: classSelection,
 
 		screenWidth:  80,
@@ -191,6 +213,7 @@ func (gr *GameRender) handleSizeUpdate(msg engine.SizeMsg) {
 	// Update UI components
 	gr.mainMenu, _ = gr.mainMenu.Update(msg)
 	gr.classSelection, _ = gr.classSelection.Update(msg)
+	gr.settingsMenu, _ = gr.settingsMenu.Update(msg)
 	*gr.hud, _ = gr.hud.Update(msg)
 
 	// Update game space if it exists
@@ -209,12 +232,57 @@ func (gr *GameRender) handleKeyInput(msg engine.KeyMsg) (engine.Model, engine.Cm
 	case systems.StateClassSelection:
 		return gr.handleClassSelectionInput(msg)
 
+	case systems.StateSettings:
+		return gr.handleSettingsSelectionInput(msg)
+
 	case systems.StateExploration:
 		return gr.handleGameInput(msg)
 
 	default:
 		return gr, nil
 	}
+}
+
+func (gr *GameRender) refreshMenusAfterLanguageChange() {
+	locManager := engine.GetLocalizationManager()
+	sizeMsg := engine.SizeMsg{Width: gr.screenWidth, Height: gr.screenHeight}
+
+	gr.mainMenu = InitMainMenu(locManager)
+	gr.mainMenu, _ = gr.mainMenu.Update(sizeMsg)
+
+	classes := config.GetDefaultClasses()
+	gr.classSelection = InitializeClassSelection(locManager, classes)
+	gr.classSelection, _ = gr.classSelection.Update(sizeMsg)
+
+	supportedLanguages, err := locManager.GetSupportedLanguages()
+	if err != nil {
+		supportedLanguages = []string{"fr"}
+	}
+	gr.settingsMenu = InitializeSettingsSelection(locManager, supportedLanguages)
+	gr.settingsMenu, _ = gr.settingsMenu.Update(sizeMsg)
+}
+
+func (gr *GameRender) handleSettingsSelectionInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
+	switch msg.Rune {
+	case '\r', '\n', ' ':
+		selected := gr.settingsMenu.GetSelected()
+		if selected.Value != "" {
+			err := engine.GetLocalizationManager().SetLanguage(selected.Value)
+			if err == nil {
+				gr.refreshMenusAfterLanguageChange()
+			}
+			gr.gameState.ChangeState(systems.StateMainMenu)
+			return gr, nil
+		}
+	case 'q':
+		gr.gameState.ChangeState(systems.StateMainMenu)
+		gr.mainMenu, _ = gr.mainMenu.Update(engine.SizeMsg{Width: gr.screenWidth, Height: gr.screenHeight})
+		return gr, nil
+	default:
+		// Pass input to menu for navigation
+		gr.settingsMenu, _ = gr.settingsMenu.Update(msg)
+	}
+	return gr, nil
 }
 
 func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
@@ -273,6 +341,7 @@ func (gr *GameRender) handleMainMenuInput(msg engine.KeyMsg) (engine.Model, engi
 
 		case "settings":
 			gr.gameState.ChangeState(systems.StateSettings)
+			gr.settingsMenu, _ = gr.settingsMenu.Update(engine.SizeMsg{Width: gr.screenWidth, Height: gr.screenHeight})
 			return gr, nil
 
 		case "quit":
@@ -308,7 +377,7 @@ func (gr *GameRender) View() string {
 	case systems.StateExploration:
 		return gr.renderGameView()
 	case systems.StateSettings:
-		return "Settings Menu - (Not Implemented)"
+		return gr.settingsMenu.View()
 	default:
 		return "Unknown State"
 	}

@@ -69,7 +69,7 @@ type Player struct {
 	MaxInv    int
 }
 
-// Player methods - defined in the same package as the type
+// FreeRoam Movement Methods
 func (p *Player) Move(direction rune, width, height int) {
 	switch direction {
 	case '↑':
@@ -99,11 +99,22 @@ func (p *Player) SetSprite(sprite string) {
 	p.sprite = sprite
 }
 
-// CreateStickManSprite returns a default player sprite
+// CreateStickManSprite returns a default player sprite ---> Placeholder for now <---
 func CreateStickManSprite() string {
 	return ` o  
 /|\/
 / \`
+}
+
+// System Related Methods
+
+// CalculateDamage computes damage dealt to an enemy considering player's force and enemy's defense
+func (p *Player) CalculateDamage(defense int) int {
+	damage := p.Stats.Force - defense
+	if damage < 0 {
+		damage = 0
+	}
+	return damage
 }
 
 // AddItemToInventory adds an item to the player's inventory if there's space
@@ -122,6 +133,25 @@ func (p *Player) RemoveItemFromInventory(index int) bool {
 	}
 	p.Inventory = append(p.Inventory[:index], p.Inventory[index+1:]...)
 	return true
+}
+
+func (p *Player) AddExperience(exp int) {
+	p.Stats.Exp += float32(exp)
+	for p.Stats.Exp >= float32(p.Stats.NextLevelExp) {
+		p.Stats.Exp -= float32(p.Stats.NextLevelExp)
+		p.Stats.Level++
+		p.Stats.NextLevelExp = int(float32(p.Stats.NextLevelExp) * 1.5) // Increase next level exp requirement
+
+		// Increase stats on level up
+		p.Stats.MaxHP += 10
+		p.Stats.Force += 2
+		p.Stats.Speed += 2
+		p.Stats.Defense += 2
+		p.Stats.Accuracy += 1
+
+		// Heal player to full health on level up
+		p.Stats.CurrentHP = p.Stats.MaxHP
+	}
 }
 
 // GetPosition returns the player's X and Y coordinates
