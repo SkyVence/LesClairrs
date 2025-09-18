@@ -11,10 +11,12 @@ import (
 
 type GameRender struct {
 	// Game Systems
-	gameInstance *Game
-	gameSpace    *GameRenderer
-	gameState    *systems.GameState
-	movement     *systems.MovementSystem
+	gameInstance  *Game
+	gameSpace     *GameRenderer
+	gameState     *systems.GameState
+	movement      *systems.MovementSystem
+	combatSystem  *systems.CombatSystem
+	spawnerSystem *systems.SpawnerSystem
 
 	// UI Components
 	mainMenu       ui.Menu
@@ -125,10 +127,15 @@ func GameModel() *GameRender {
 	gameInstance := initializeGameInstance()
 	gameState := systems.NewGameState(systems.StateMainMenu)
 	movement := systems.NewMovementSystem()
+	spawner := systems.NewSpawnerSystem()
+	combatSystem := systems.NewCombatSystem(types.Idle, locManager, spawner)
+
 	return &GameRender{
-		gameInstance: gameInstance,
-		gameState:    gameState,
-		movement:     movement,
+		gameInstance:  gameInstance,
+		gameState:     gameState,
+		movement:      movement,
+		combatSystem:  combatSystem,
+		spawnerSystem: spawner,
 
 		mainMenu:       menu,
 		hud:            hud,
@@ -179,6 +186,8 @@ func (gr *GameRender) renderGameView() string {
 		tm := loaders.LoadStageMap(gr.gameInstance.CurrentWorld.WorldID, gr.gameInstance.CurrentStage.StageNb)
 		gr.currentMap = tm
 		gr.gameSpace.SetMap(tm)
+
+		gr.spawnerSystem.LoadStage(gr.gameInstance.CurrentStage)
 		// Ensure player spawn is valid for the loaded map
 		if gr.gameInstance.Player != nil {
 			gr.movement.EnsureValidSpawn(gr.gameInstance.Player, gr.currentMap)
@@ -186,12 +195,22 @@ func (gr *GameRender) renderGameView() string {
 	}
 
 	// Render game world
+	if gr.spawnerSystem != nil {
+		activeEnemies := gr.spawnerSystem.GetActiveEnemies()
+		gr.gameSpace.SetEnemies(activeEnemies)
+	}
+
 	gameContent := gr.gameSpace.RenderGameWorld(gr.gameInstance.Player)
 
 	return gr.hud.RenderWithContent(gameContent)
 }
 
 func (gr *GameRender) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
+
+	if gr.gameState.CurrentState == systems.StateExploration {
+		gr.updateGameSystems()
+	}
+
 	switch msg := msg.(type) {
 	case engine.SizeMsg:
 		gr.handleSizeUpdate(msg)
@@ -204,6 +223,26 @@ func (gr *GameRender) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 	}
 
 	return gr, nil
+}
+
+func (gr *GameRender) updateGameSystems() {
+	if gr.gameState.CurrentState != systems.StateExploration {
+		return
+	}
+
+	// Clean up defeated enemies
+	if gr.spawnerSystem != nil {
+		gr.spawnerSystem.RemoveDefeatedEnemies()
+
+		// Check if stage is cleared
+		if gr.spawnerSystem.IsStageCleared() {
+			// Award clearing reward
+			if gr.gameInstance != nil && gr.gameInstance.Player != nil && gr.gameInstance.CurrentStage != nil {
+				// Add experience or handle stage completion
+				// gr.gameInstance.Player.AddExperience(gr.gameInstance.CurrentStage.ClearingReward)
+			}
+		}
+	}
 }
 
 func (gr *GameRender) handleSizeUpdate(msg engine.SizeMsg) {
@@ -291,6 +330,10 @@ func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.C
 		if gr.gameState.CurrentState == systems.StateExploration {
 			// Use movement system with map-based collision and bounds
 			_ = gr.movement.MovePlayer(gr.gameInstance.Player, msg.Rune, gr.currentMap)
+
+			if gr.combatSystem.TryEngageCombat(gr.gameInstance.Player) {
+				gr.gameState.ChangeState(systems.StateCombat)
+			}
 		}
 	}
 

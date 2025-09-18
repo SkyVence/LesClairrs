@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"projectred-rpg.com/config"
+	"projectred-rpg.com/game/entities"
 	"projectred-rpg.com/game/types"
 )
 
@@ -12,6 +13,7 @@ type GameRenderer struct {
 	width   int
 	height  int
 	tileMap *types.TileMap
+	enemies []*entities.Enemy
 	viewX   int // top-left map X of the viewport
 	viewY   int // top-left map Y of the viewport
 	// inner viewport rectangle (borders will be drawn around this)
@@ -43,6 +45,7 @@ func (gr *GameRenderer) RenderGameWorld(player *types.Player) string {
 	gr.renderBackground(grid)
 	gr.renderMap(grid)
 	gr.renderBorders(grid)
+	gr.renderEnemies(grid)
 	gr.renderPlayer(grid, player)
 
 	// Convert grid to string efficiently
@@ -118,6 +121,10 @@ func (gr *GameRenderer) renderBorders(grid [][]rune) {
 
 // SetMap sets the current tile map to render
 func (gr *GameRenderer) SetMap(tm *types.TileMap) { gr.tileMap = tm }
+
+func (gr *GameRenderer) SetEnemies(enemies []*entities.Enemy) {
+	gr.enemies = enemies
+}
 
 // MapSize returns underlying map dimensions (0,0 if none)
 func (gr *GameRenderer) MapSize() (int, int) {
@@ -225,6 +232,45 @@ func (gr *GameRenderer) renderMap(grid [][]rune) {
 	}
 }
 
+func (gr *GameRenderer) renderEnemies(grid [][]rune) {
+	if gr.enemies == nil {
+		return
+	}
+
+	// Use the same stick man sprite as the player
+	enemySprite := ` o  
+/|\/
+/ \`
+
+	for _, enemy := range gr.enemies {
+		if !enemy.IsAlive {
+			continue
+		}
+
+		pos := enemy.GetPosition()
+		enemyX, enemyY := pos.X, pos.Y
+
+		// Check if enemy is visible in viewport
+		if enemyX >= gr.viewX && enemyX < gr.viewX+gr.innerW &&
+			enemyY >= gr.viewY && enemyY < gr.viewY+gr.innerH {
+
+			// Render enemy sprite similar to player rendering
+			spriteLines := strings.Split(enemySprite, "\n")
+			for i, line := range spriteLines {
+				y := gr.innerY + 1 + (enemyY - gr.viewY - 1) + i
+				if y >= 0 && y < gr.height {
+					for j, char := range line {
+						x := gr.innerX + 1 + (enemyX - gr.viewX - 1) + j
+						if x >= 0 && x < gr.width {
+							grid[y][x] = char
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 // isOuterWall checks if the given map coordinates are on the outer border
 func (gr *GameRenderer) isOuterWall(mapX, mapY int) bool {
 	if gr.tileMap == nil {
@@ -284,5 +330,3 @@ func max(a, b int) int {
 	}
 	return b
 }
-
-// (duplicate UpdateSize removed)
