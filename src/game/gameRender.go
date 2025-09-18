@@ -3,6 +3,7 @@ package game
 import (
 	"projectred-rpg.com/config"
 	"projectred-rpg.com/engine"
+	"projectred-rpg.com/game/loaders"
 	"projectred-rpg.com/game/systems"
 	"projectred-rpg.com/game/types"
 	"projectred-rpg.com/ui"
@@ -13,6 +14,7 @@ type GameRender struct {
 	gameInstance *Game
 	gameSpace    *GameRenderer
 	gameState    *systems.GameState
+	movement     *systems.MovementSystem
 
 	// UI Components
 	mainMenu       ui.Menu
@@ -29,6 +31,7 @@ type GameRender struct {
 	// Game Data
 	// Add game time
 	// Add lang settings
+	currentMap *types.TileMap
 }
 
 func InitMainMenu(locManager *engine.LocalizationManager) ui.Menu {
@@ -74,13 +77,13 @@ func InitializeClassSelection(locManager *engine.LocalizationManager, classes []
 func initializeGameInstance() *Game {
 	// Define default player class - could be moved to config
 	defaultClass := types.Class{
-		Name:        "Cyber-Samurai",
-		MaxHP:       100,
-		Force:       1,
-		Speed:       12,
-		Defense:     8,
-		Accuracy:    15,
-		Description: "A swift and deadly warrior, excelling in close combat and agility.",
+		Name:        "null",
+		MaxHP:       0,
+		Force:       0,
+		Speed:       0,
+		Defense:     0,
+		Accuracy:    0,
+		Description: "null",
 	}
 
 	return NewGameInstance(defaultClass)
@@ -100,9 +103,11 @@ func GameModel() *GameRender {
 	classSelection := InitializeClassSelection(locManager, classes)
 	gameInstance := initializeGameInstance()
 	gameState := systems.NewGameState(systems.StateMainMenu)
+	movement := systems.NewMovementSystem()
 	return &GameRender{
 		gameInstance: gameInstance,
 		gameState:    gameState,
+		movement:     movement,
 
 		mainMenu:       menu,
 		hud:            hud,
@@ -146,6 +151,17 @@ func (gr *GameRender) renderGameView() string {
 
 	// Update HUD with current player stats
 	gr.updateHUDStats()
+
+	// Load and set map for current world/stage if available
+	if gr.gameInstance != nil && gr.gameInstance.CurrentWorld != nil && gr.gameInstance.CurrentStage != nil {
+		tm := loaders.LoadStageMap(gr.gameInstance.CurrentWorld.WorldID, gr.gameInstance.CurrentStage.StageNb)
+		gr.currentMap = tm
+		gr.gameSpace.SetMap(tm)
+		// Ensure player spawn is valid for the loaded map
+		if gr.gameInstance.Player != nil {
+			gr.movement.EnsureValidSpawn(gr.gameInstance.Player, gr.currentMap)
+		}
+	}
 
 	// Render game world
 	gameContent := gr.gameSpace.RenderGameWorld(gr.gameInstance.Player)
@@ -205,7 +221,8 @@ func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.C
 	switch msg.Rune {
 	case '↑', '↓', '←', '→':
 		if gr.gameState.CurrentState == systems.StateExploration {
-			gr.gameInstance.Player.Move(msg.Rune, gr.gameSpace.width, gr.gameSpace.height)
+			// Use movement system with map-based collision and bounds
+			_ = gr.movement.MovePlayer(gr.gameInstance.Player, msg.Rune, gr.currentMap)
 		}
 	}
 

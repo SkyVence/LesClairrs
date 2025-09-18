@@ -19,6 +19,33 @@ import (
 	"projectred-rpg.com/game/types"
 )
 
+// Map tiles and characters
+// These define the ASCII characters used in .map files for semantics like walls.
+const (
+	// TileEmpty is unused/blank space in the map
+	TileEmpty rune = ' '
+	// TileFloor is walkable ground
+	TileFloor rune = '.'
+	// TileWall is a solid wall
+	TileWall rune = '#'
+)
+
+// MapWallChars lists all characters considered solid map walls.
+// Extend this slice if you introduce new wall glyphs in your .map files.
+var MapWallChars = []rune{
+	TileWall,
+}
+
+// IsMapWall returns true if the given rune is considered a wall (solid/impassable).
+func IsMapWall(ch rune) bool {
+	for _, w := range MapWallChars {
+		if ch == w {
+			return true
+		}
+	}
+	return false
+}
+
 // Default classes available in the game
 func GetDefaultClasses() []types.Class {
 	return []types.Class{

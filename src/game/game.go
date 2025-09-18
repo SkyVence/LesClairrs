@@ -14,7 +14,6 @@
 //
 //	gameRender := GameModel()
 //	location, worldID := gameRender.CurrentLocation()
-//	success := gameRender.Advance()
 package game
 
 import (
@@ -124,55 +123,6 @@ func (g *Game) CurrentLocation() (string, int) {
 	return g.CurrentWorld.Name, g.CurrentWorld.WorldID
 }
 
-// PeekNext returns information about the next stage or world without mutating state.
-// It returns a user-facing name for the upcoming location and the target world ID,
-// plus a boolean indicating whether a next location exists.
-func (g *Game) PeekNext() (string, int, bool) {
-	if g == nil || g.CurrentWorld == nil || g.CurrentStage == nil {
-		return "", -1, false
-	}
-	// Next stage in current world?
-	if next := g.CurrentStage.AdvanceToNextStage(g.CurrentWorld); next != nil {
-		name := next.Name
-		if name == "" {
-			name = g.CurrentWorld.Name
-		}
-		return name, g.CurrentWorld.WorldID, true
-	}
-	// Otherwise next world, first stage
-	if nw := g.CurrentWorld.NextWorld(); nw != nil {
-		if len(nw.Stages) > 0 {
-			name := nw.Stages[0].Name
-			if name == "" {
-				name = nw.Name
-			}
-			return name, nw.WorldID, true
-		}
-	}
-	return "", -1, false
-}
-
-// Advance moves the game to the next stage; if no more stages exist,
-// it loads the next world and moves to its first stage. Returns true on success.
-func (g *Game) Advance() bool {
-	if g == nil || g.CurrentWorld == nil || g.CurrentStage == nil {
-		return false
-	}
-	if next := g.CurrentStage.AdvanceToNextStage(g.CurrentWorld); next != nil {
-		g.CurrentStage = next
-		return true
-	}
-	// Try next world
-	if nw := g.CurrentWorld.NextWorld(); nw != nil {
-		g.CurrentWorld = nw
-		if len(nw.Stages) > 0 {
-			g.CurrentStage = &nw.Stages[0]
-			return true
-		}
-	}
-	return false
-}
-
 // GameRender methods for accessing game state through the render interface
 
 // CurrentLocation returns the current location information via GameRender.
@@ -181,22 +131,6 @@ func (gr *GameRender) CurrentLocation() (string, int) {
 		return "", -1
 	}
 	return gr.gameInstance.CurrentLocation()
-}
-
-// PeekNext returns information about the next stage or world via GameRender.
-func (gr *GameRender) PeekNext() (string, int, bool) {
-	if gr.gameInstance == nil {
-		return "", -1, false
-	}
-	return gr.gameInstance.PeekNext()
-}
-
-// Advance moves the game to the next stage via GameRender.
-func (gr *GameRender) Advance() bool {
-	if gr.gameInstance == nil {
-		return false
-	}
-	return gr.gameInstance.Advance()
 }
 
 // GetGameState returns the current game state.
