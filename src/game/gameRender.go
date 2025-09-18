@@ -77,7 +77,7 @@ func GameModel() *GameRender {
 	merchantMenu := InitializeMerchantMenu(locManager)
 
 	// Initialize Game Systems
-	gameInstance := initializeGameInstance()
+	gameInstance := initializeGameInstance() // Pass current language
 	gameState := systems.NewGameState(systems.StateMainMenu)
 	movement := systems.NewMovementSystem()
 	spawner := systems.NewSpawnerSystem()
@@ -135,17 +135,20 @@ func (gr *GameRender) renderGameView() string {
 }
 
 func (gr *GameRender) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
-
-	if gr.gameState.CurrentState == systems.StateExploration {
-		gr.updateGameSystems()
-	}
-
 	switch msg := msg.(type) {
 	case engine.SizeMsg:
 		gr.handleSizeUpdate(msg)
 
 	case engine.KeyMsg:
 		return gr.handleKeyInput(msg)
+
+	case engine.TickMsg:
+		// Handle level intro tick updates
+		if gr.gameInstance != nil && gr.gameInstance.IsShowingIntro() {
+			var cmd engine.Cmd
+			gr.gameInstance.LevelIntro, cmd = gr.gameInstance.LevelIntro.Update(msg)
+			return gr, cmd
+		}
 
 	default:
 		// Handle other message types
@@ -156,6 +159,11 @@ func (gr *GameRender) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 
 func (gr *GameRender) handleKeyInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
 	currentState := gr.gameState.CurrentState
+
+	// Handle level intro separately
+	//if gr.gameInstance != nil && gr.gameInstance.IsShowingIntro() {
+	//	return gr.handleLevelIntroInput(msg)
+	//}
 
 	switch currentState {
 	case systems.StateMainMenu:
@@ -169,10 +177,6 @@ func (gr *GameRender) handleKeyInput(msg engine.KeyMsg) (engine.Model, engine.Cm
 
 	case systems.StateMerchant:
 		return gr.handleMerchantInput(msg)
-
-	case systems.StateCombat:
-		return gr, nil
-
 	case systems.StateExploration:
 		return gr.handleGameInput(msg)
 
@@ -189,6 +193,12 @@ func (gr *GameRender) View() string {
 	if gr.gameState == nil {
 		return "Error: Game state is nil"
 	}
+
+	// If showing level intro, render it over everything
+	if gr.gameInstance != nil && gr.gameInstance.IsShowingIntro() {
+		return gr.gameInstance.LevelIntro.Render()
+	}
+
 	currentState := gr.gameState.CurrentState
 
 	switch currentState {
@@ -200,8 +210,6 @@ func (gr *GameRender) View() string {
 		return gr.renderGameView()
 	case systems.StateSettings:
 		return gr.settingsMenu.View()
-	case systems.StateCombat:
-		return "Combat View - To be implemented"
 	case systems.StateMerchant:
 		return gr.merchantMenu.View()
 	default:
