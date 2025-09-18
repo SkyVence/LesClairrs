@@ -99,7 +99,7 @@ func InitializeMerchantMenu(locManager *engine.LocalizationManager) ui.MerchantM
 				Description: "",
 				Type:        types.Weapon,
 			},
-			Price: 0, 
+			Price: 0,
 		},
 		{
 			Item: types.Item{
@@ -257,31 +257,6 @@ func GameModel() *GameRender {
 	}
 }
 
-// Helper to update HUD stats
-func (gr *GameRender) updateHUDStats() {
-	if gr.gameInstance == nil || gr.gameInstance.Player == nil {
-		return
-	}
-
-	player := gr.gameInstance.Player
-	worldID := gr.gameInstance.CurrentWorld.WorldID
-	stageID := gr.gameInstance.CurrentStage.StageNb
-
-	gr.hud.SetPlayerStats(
-		player.Stats.CurrentHP,
-		player.Stats.MaxHP,
-		player.Stats.Level,
-		int(player.Stats.Exp),
-		player.Stats.NextLevelExp,
-		worldID,
-		stageID,
-	)
-
-	if gr.gameInstance.CurrentWorld != nil && gr.gameInstance.CurrentStage != nil {
-		gr.hud.SetLocation(gr.gameInstance.CurrentWorld.Name, gr.gameInstance.CurrentStage.Name)
-	}
-}
-
 func (gr *GameRender) renderGameView() string {
 	if gr.gameSpace == nil {
 		gr.gameSpace = NewGameRenderer(gr.screenWidth-1, gr.screenHeight-gr.hud.Height()-1)
@@ -334,43 +309,6 @@ func (gr *GameRender) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 	return gr, nil
 }
 
-func (gr *GameRender) updateGameSystems() {
-	if gr.gameState.CurrentState != systems.StateExploration {
-		return
-	}
-
-	// Clean up defeated enemies
-	if gr.spawnerSystem != nil {
-		gr.spawnerSystem.RemoveDefeatedEnemies()
-
-		// Check if stage is cleared
-		if gr.spawnerSystem.IsStageCleared() {
-			// Award clearing reward
-			if gr.gameInstance != nil && gr.gameInstance.Player != nil && gr.gameInstance.CurrentStage != nil {
-				// Add experience or handle stage completion
-				// gr.gameInstance.Player.AddExperience(gr.gameInstance.CurrentStage.ClearingReward)
-			}
-		}
-	}
-}
-
-func (gr *GameRender) handleSizeUpdate(msg engine.SizeMsg) {
-	gr.screenWidth = msg.Width
-	gr.screenHeight = msg.Height
-
-	// Update UI components
-	gr.mainMenu, _ = gr.mainMenu.Update(msg)
-	gr.classSelection, _ = gr.classSelection.Update(msg)
-	gr.settingsMenu, _ = gr.settingsMenu.Update(msg)
-	gr.merchantMenu, _ = gr.merchantMenu.Update(msg)
-	*gr.hud, _ = gr.hud.Update(msg)
-
-	// Update game space if it exists
-	if gr.gameSpace != nil {
-		gr.gameSpace.UpdateSize(msg.Width-1, msg.Height-gr.hud.Height()-1)
-	}
-}
-
 func (gr *GameRender) handleKeyInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
 	currentState := gr.gameState.CurrentState
 
@@ -387,152 +325,15 @@ func (gr *GameRender) handleKeyInput(msg engine.KeyMsg) (engine.Model, engine.Cm
 	case systems.StateMerchant:
 		return gr.handleMerchantInput(msg)
 
+	case systems.StateCombat:
+		return gr, nil
+
 	case systems.StateExploration:
 		return gr.handleGameInput(msg)
 
 	default:
 		return gr, nil
 	}
-}
-
-func (gr *GameRender) refreshMenusAfterLanguageChange() {
-	locManager := engine.GetLocalizationManager()
-	sizeMsg := engine.SizeMsg{Width: gr.screenWidth, Height: gr.screenHeight}
-
-	gr.mainMenu = InitMainMenu(locManager)
-	gr.mainMenu, _ = gr.mainMenu.Update(sizeMsg)
-
-	classes := config.GetDefaultClasses()
-	gr.classSelection = InitializeClassSelection(locManager, classes)
-	gr.classSelection, _ = gr.classSelection.Update(sizeMsg)
-
-	supportedLanguages, err := locManager.GetSupportedLanguages()
-	if err != nil {
-		supportedLanguages = []string{"fr"}
-	}
-	gr.settingsMenu = InitializeSettingsSelection(locManager, supportedLanguages)
-	gr.settingsMenu, _ = gr.settingsMenu.Update(sizeMsg)
-
-	gr.merchantMenu = InitializeMerchantMenu(locManager)
-	gr.merchantMenu, _ = gr.merchantMenu.Update(sizeMsg)
-}
-
-func (gr *GameRender) handleSettingsSelectionInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
-	switch msg.Rune {
-	case '\r', '\n', ' ':
-		selected := gr.settingsMenu.GetSelected()
-		if selected.Value != "" {
-			err := engine.GetLocalizationManager().SetLanguage(selected.Value)
-			if err == nil {
-				gr.refreshMenusAfterLanguageChange()
-			}
-			gr.gameState.ChangeState(systems.StateMainMenu)
-			return gr, nil
-		}
-	case 'q':
-		gr.gameState.ChangeState(systems.StateMainMenu)
-		gr.mainMenu, _ = gr.mainMenu.Update(engine.SizeMsg{Width: gr.screenWidth, Height: gr.screenHeight})
-		return gr, nil
-	default:
-		// Pass input to menu for navigation
-		gr.settingsMenu, _ = gr.settingsMenu.Update(msg)
-	}
-	return gr, nil
-}
-
-func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
-	switch msg.Rune {
-	case '↑', '↓', '←', '→':
-		if gr.gameState.CurrentState == systems.StateExploration {
-			// Use movement system with map-based collision and bounds
-			_ = gr.movement.MovePlayer(gr.gameInstance.Player, msg.Rune, gr.currentMap)
-
-			if gr.combatSystem.TryEngageCombat(gr.gameInstance.Player) {
-				gr.gameState.ChangeState(systems.StateCombat)
-			}
-		}
-	case 'm':
-		gr.gameState.ChangeState(systems.StateMerchant)
-		gr.merchantMenu, _ = gr.merchantMenu.Update(engine.SizeMsg{Width: gr.screenWidth, Height: gr.screenHeight})
-		return gr, nil
-	}
-
-	return gr, nil
-}
-
-func (gr *GameRender) handleMerchantInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
-	switch msg.Rune {
-	case '\r', '\n', ' ':
-		return gr, nil
-	case 'q':
-		gr.gameState.ChangeState(systems.StateExploration)
-		return gr, nil
-	default:
-		gr.merchantMenu, _ = gr.merchantMenu.Update(msg)
-	}
-	return gr, nil
-}
-
-func (gr *GameRender) handleClassSelectionInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
-	switch msg.Rune {
-	case '\r', '\n', ' ': // Enter key
-		selected := gr.classSelection.GetSelected()
-		if selected.Value != "" {
-			// Find the class by name
-			classes := config.GetDefaultClasses()
-			for _, class := range classes {
-				if class.Name == selected.Value {
-					// Initialize game with selected class
-					gr.gameInstance = NewGameInstance(class)
-					gr.gameState.ChangeState(systems.StateExploration)
-					return gr, nil
-				}
-			}
-		}
-
-	case 'q':
-		gr.gameState.ChangeState(systems.StateMainMenu)
-		// Ensure main menu has current dimensions when returning
-		gr.mainMenu, _ = gr.mainMenu.Update(engine.SizeMsg{Width: gr.screenWidth, Height: gr.screenHeight})
-		return gr, nil
-
-	default:
-		// Pass input to menu for navigation
-		gr.classSelection, _ = gr.classSelection.Update(msg)
-	}
-	return gr, nil
-}
-
-func (gr *GameRender) handleMainMenuInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
-	switch msg.Rune {
-	case '\r', '\n', ' ': // Enter key
-		selected := gr.mainMenu.GetSelected()
-		switch selected.Value {
-		case "start":
-			// Transition to class selection
-			gr.gameState.ChangeState(systems.StateClassSelection)
-			gr.classSelection, _ = gr.classSelection.Update(engine.SizeMsg{Width: gr.screenWidth, Height: gr.screenHeight})
-
-			return gr, nil
-
-		case "settings":
-			gr.gameState.ChangeState(systems.StateSettings)
-			gr.settingsMenu, _ = gr.settingsMenu.Update(engine.SizeMsg{Width: gr.screenWidth, Height: gr.screenHeight})
-			return gr, nil
-
-		case "quit":
-			return gr, engine.Quit
-		}
-
-	case 'q':
-		return gr, engine.Quit
-
-	default:
-		// Pass input to menu for navigation
-		gr.mainMenu, _ = gr.mainMenu.Update(msg)
-	}
-
-	return gr, nil
 }
 
 func (m *GameRender) Init() engine.Msg {
@@ -554,6 +355,8 @@ func (gr *GameRender) View() string {
 		return gr.renderGameView()
 	case systems.StateSettings:
 		return gr.settingsMenu.View()
+	case systems.StateCombat:
+		return "Combat View - To be implemented"
 	case systems.StateMerchant:
 		return gr.merchantMenu.View()
 	default:
