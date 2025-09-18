@@ -47,6 +47,48 @@
 				"name": "P3R",
 				"description": "A robust and powerful combat robot."
 			}
+		},
+		"weapons": {
+			"katana": {
+				"name": "Katana",
+				"description": "Melee",
+				"attack1": "Spectral Strike",
+				"attack2": "Holo Slash",
+				"attack3": "Unbeatable",
+				"attack4": "Ethereal Blade"
+			},
+			"faux neuralink": {
+				"name": "Neuralink Scythe",
+				"description": "Melee",
+				"attack1": "Gash",
+				"attack2": "Mental Harvest",
+				"attack3": "Instinctive Rhythm",
+				"attack4": "Macabre Dance"
+			},
+			"arc synaptique": {
+				"name": "Synaptic Arc",
+				"description": "Ranged",
+				"attack1": "EM Bolt",
+				"attack2": "Conductive Link",
+				"attack3": "Paralyzing Arrow",
+				"attack4": "Ion Storm"
+			},
+			"sniper": {
+				"name": "SN1P3R",
+				"description": "Ranged",
+				"attack1": "Ballistic Shot",
+				"attack2": "Coup de Grace",
+				"attack3": "Optical Marker",
+				"attack4": "H34DSH0T"
+			},
+			"neon reaver": {
+				"name": "Neon Reaver",
+				"description": "Ranged",
+				"attack1": "Photonic Shot",
+				"attack2": "CHARGE!!",
+				"attack3": "GRENADE!",
+				"attack4": "Implosive Vortex"
+			}
 		}
 	},
 	"game": {
@@ -55,7 +97,7 @@
 				"name": "MEILAND",
 				"stages": {
 					"1": {
-						"name":"The Pit",
+						"name": "The Pit",
 						"dialogue": {
 							"aethelgard1": "You've got the knack. What are you doing in this hole? You're on my property.",
 							"sam1": "Gngng where are we blabla who are you",
@@ -66,7 +108,7 @@
 						}
 					},
 					"2": {
-						"name":"Downtown",
+						"name": "Downtown",
 						"dialogue": {
 							"foule1":"INVADERS, GET OUT! DICTATORS, TO THE STAKE!",
 							"sam1":"Why are you protesting?",
@@ -84,7 +126,7 @@
 						}
 					},
 					"3": {
-						"name":"NULL Border",
+						"name": "NULL Border",
 						"dialogue": {
 							"general1":"PROD. The war is over, go home and stay hidden, this is no longer your fight",
 							"sam1":"Valerius told me who you are. You're not ordinary soldiers.",
@@ -101,7 +143,7 @@
 				"name": "CYBER DISTRICT",
 				"stages": {
 					"1": {
-						"name":"Alpha Sector",
+						"name": "Alpha Sector",
 						"dialogue": {
 							"aethelgard1":"Sam! My favorite customer! So in the mood for shopping? I've got a good deal for you. Have you ever heard of Grimshaw? Obviously not, he travels the galaxies. You're more likely to get crushed by a meteorite than to run into him. But it's your lucky day! He's taking a break in the area for a few months. He's a good guy even if he's very scary at first sight. I guess intergalactic travel doesn't suit him. Anyway, you should find him being mysterious near Valerius's shop a few meters away. Don't miss your chance, see you later buddy!",
 							"sam1":"Grimshaw?",
