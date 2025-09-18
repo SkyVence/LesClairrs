@@ -130,5 +130,3 @@ Found something unclear or missing? Please:
 3. Consider contributing improvements via pull request
 
 ---
-
-*This documentation is maintained by the ProjectRed community. Last updated: 2024*
