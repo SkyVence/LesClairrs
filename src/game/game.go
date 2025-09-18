@@ -65,29 +65,28 @@ type Game struct {
 //
 //	class := config.DefaultClasses["CYBER_SAMURAI"]
 //	game := NewGameInstance(class)
-func NewGameInstance(selectedClass types.Class) *Game {
+func NewGameInstance(selectedClass types.Class, language string) *Game {
 	world := NewWorld(1)
-
-	// Hardcoded for now --> Probably will be changed if implementing save/load system
 	player := entities.NewPlayer("Sam", selectedClass, types.Position{X: 1, Y: 1})
 	
+	fmt.Printf("DEBUG: Creating LevelIntroSystem with language: %s\n", language)
+	
 	// Create level intro system
-	//levelIntro := systems.NewLevelIntroSystem(language)
-	//if err := levelIntro.LoadLocalization(); err != nil {
-		// Log error but continue - not critical
-		// You can add proper logging here
-	//}
+	levelIntro := systems.NewLevelIntroSystem(language)
+	if err := levelIntro.LoadLocalization(); err != nil {
+		fmt.Printf("DEBUG: Error loading localization: %v\n", err)
+	} else {
+		fmt.Printf("DEBUG: Localization loaded successfully\n")
+	}
 	
 	return &Game{
 		Player:       player,
 		CurrentWorld: world,
 		CurrentStage: &world.Stages[0],
-		// Initialize systems
-		//Combat:    systems.NewCombatSystem(),
-		Inventory: systems.NewInventorySystem(),
-		Movement:  systems.NewMovementSystem(),
-		//LevelIntro: levelIntro,
-		//language:   language,
+		Inventory:    systems.NewInventorySystem(),
+		Movement:     systems.NewMovementSystem(),
+		LevelIntro:   levelIntro,  // AJOUTEZ CETTE LIGNE
+		language:     language,
 	}
 }
 

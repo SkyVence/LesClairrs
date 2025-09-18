@@ -41,18 +41,22 @@ type GameRender struct {
 }
 
 func initializeGameInstance() *Game {
-	// Define default player class - could be moved to config
-	defaultClass := types.Class{
-		Name:        "null",
-		MaxHP:       0,
-		Force:       0,
-		Speed:       0,
-		Defense:     0,
-		Accuracy:    0,
-		Description: "null",
-	}
+    // Define default player class - could be moved to config
+    defaultClass := types.Class{
+        Name:        "null",
+        MaxHP:       0,
+        Force:       0,
+        Speed:       0,
+        Defense:     0,
+        Accuracy:    0,
+        Description: "null",
+    }
 
-	return NewGameInstance(defaultClass)
+    // USE YOUR ENGINE TO GET THE LANGUAGE
+    locManager := engine.GetLocalizationManager()
+    currentLang := locManager.GetCurrentLanguage()
+    
+    return NewGameInstance(defaultClass, currentLang)
 }
 
 func GameModel() *GameRender {
@@ -166,31 +170,43 @@ func (gr *GameRender) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 }
 
 func (gr *GameRender) handleKeyInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
-	currentState := gr.gameState.CurrentState
+    currentState := gr.gameState.CurrentState
 
-	// Handle level intro separately
-	//if gr.gameInstance != nil && gr.gameInstance.IsShowingIntro() {
-	//	return gr.handleLevelIntroInput(msg)
-	//}
+    // Handle level intro separately - DÉCOMMENTEZ CES LIGNES !
+    if gr.gameInstance != nil && gr.gameInstance.IsShowingIntro() {
+        return gr.handleLevelIntroInput(msg)
+    }
 
-	switch currentState {
-	case systems.StateMainMenu:
-		return gr.handleMainMenuInput(msg)
+    switch currentState {
+    case systems.StateMainMenu:
+        return gr.handleMainMenuInput(msg)
 
-	case systems.StateClassSelection:
-		return gr.handleClassSelectionInput(msg)
+    case systems.StateClassSelection:
+        return gr.handleClassSelectionInput(msg)
 
-	case systems.StateSettings:
-		return gr.handleSettingsSelectionInput(msg)
+    case systems.StateSettings:
+        return gr.handleSettingsSelectionInput(msg)
 
-	case systems.StateMerchant:
-		return gr.handleMerchantInput(msg)
-	case systems.StateExploration:
-		return gr.handleGameInput(msg)
+    case systems.StateMerchant:
+        return gr.handleMerchantInput(msg)
+    case systems.StateExploration:
+        return gr.handleGameInput(msg)
 
-	default:
+    default:
+        return gr, nil
+    }
+}
+
+func (gr *GameRender) handleLevelIntroInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
+	if gr.gameInstance == nil || gr.gameInstance.LevelIntro == nil {
 		return gr, nil
 	}
+
+	// Update the intro system
+	var cmd engine.Cmd
+	gr.gameInstance.LevelIntro, cmd = gr.gameInstance.LevelIntro.Update(msg)
+	
+	return gr, cmd
 }
 
 func (m *GameRender) Init() engine.Msg {

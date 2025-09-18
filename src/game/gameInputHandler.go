@@ -43,12 +43,17 @@ func (gr *GameRender) handleClassSelectionInput(msg engine.KeyMsg) (engine.Model
 	case '\r', '\n', ' ': // Enter key
 		selected := gr.classSelection.GetSelected()
 		if selected.Value != "" {
-			// Find the class by name
 			classes := config.GetDefaultClasses()
 			for _, class := range classes {
 				if class.Name == selected.Value {
-					// Initialize game with selected class
-					gr.gameInstance = NewGameInstance(class)
+					// Get current language
+					currentLang := engine.GetLocalizationManager().GetCurrentLanguage()
+
+					// Initialize game with selected class and language
+					gr.gameInstance = NewGameInstance(class, currentLang) // CORRIGÉ
+
+					gr.gameInstance.LoadStage(1, 1)
+
 					gr.gameState.ChangeState(systems.StateExploration)
 					return gr, nil
 				}
