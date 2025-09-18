@@ -242,3 +242,78 @@ func (gr *GameRender) View() string {
 		return "Unknown State"
 	}
 }
+
+// À ajouter dans votre fichier GameRender principal
+func (gr *GameRender) transitionToNextLevel() {
+    if gr.gameInstance == nil || gr.gameInstance.CurrentWorld == nil || gr.gameInstance.CurrentStage == nil {
+        return
+    }
+
+    currentWorldID := gr.gameInstance.CurrentWorld.WorldID
+    currentStageNb := gr.gameInstance.CurrentStage.StageNb
+    
+    nextStageNb := currentStageNb + 1
+    
+    stageExists := false
+    for _, stage := range gr.gameInstance.CurrentWorld.Stages {
+        if stage.StageNb == nextStageNb {
+            stageExists = true
+            break
+        }
+    }
+    
+    if stageExists {
+        gr.gameInstance.LoadStage(currentWorldID, nextStageNb)
+    } else {
+        nextWorldID := currentWorldID + 1
+        
+        if world, exists := loaders.GetWorld(nextWorldID); exists && len(world.Stages) > 0 {
+            gr.gameInstance.LoadStage(nextWorldID, 1)
+        } else {
+            return
+        }
+    }
+    
+    // Forcer plusieurs mouvements pour sortir le joueur d'une collision
+    for i := 0; i < 5; i++ {
+        gr.movement.MovePlayer(gr.gameInstance.Player, '→', gr.currentMap)
+        gr.movement.MovePlayer(gr.gameInstance.Player, '↓', gr.currentMap)
+    }
+}
+
+func (gr *GameRender) fixPlayerPosition() {
+    // Essayer quelques positions de base qui sont généralement libres
+    safePositions := []struct{x, y int}{
+        {1, 1}, {2, 1}, {1, 2}, {2, 2}, {3, 1}, {1, 3}, {3, 3}, {4, 4}, {5, 5},
+    }
+    
+    for _, pos := range safePositions {
+        // Utiliser le système de mouvement pour positionner le joueur
+        // en utilisant une direction factice pour déclencher le positionnement
+        originalPos := gr.getPlayerPosition()
+        
+        if gr.setPlayerPosition(pos.x, pos.y) {
+            // Vérifier si cette position est valide en essayant un mouvement nul
+            if gr.movement.MovePlayer(gr.gameInstance.Player, '↑', gr.currentMap) {
+                // Si le mouvement est valide, on reste ici
+                gr.setPlayerPosition(pos.x, pos.y)
+                return
+            }
+        }
+        
+        // Restaurer la position originale si celle-ci ne fonctionne pas
+        gr.setPlayerPosition(originalPos.x, originalPos.y)
+    }
+}
+
+// Fonctions helper (à adapter selon votre structure Player)
+func (gr *GameRender) getPlayerPosition() struct{x, y int} {
+    // À adapter selon vos champs Player réels
+    return struct{x, y int}{x: 1, y: 1} // position par défaut
+}
+
+func (gr *GameRender) setPlayerPosition(x, y int) bool {
+    // À adapter selon vos champs Player réels
+    // Retourner true si le positionnement a réussi
+    return true
+}
