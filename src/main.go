@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// Create the game instance (game logic lives in the game package)
-	g := game.GameModel()
+	g := game.GameModel() // Example terminal size
 
 	// Wrap it with the engine adapter so it satisfies ui.Model
 	p := engine.NewProgram(engine.Wrap(g), engine.WithAltScreen())

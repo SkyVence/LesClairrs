@@ -9,7 +9,7 @@ type EnemyStats struct {
 	CurrentHP int
 }
 
-type Enemy struct {
+type EnemySpawn struct {
 	Name      string
 	Force     int
 	Speed     int

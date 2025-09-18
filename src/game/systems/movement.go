@@ -21,6 +21,7 @@ func (ms *MovementSystem) spriteFootprintTiles(player *types.Player) (int, int) 
 
 // isWalkable returns true if (x,y) is within map bounds and not a wall.
 // x,y are 1-based player coordinates. When tm is nil, treat all tiles as walkable.
+// For outer walls, treats them as viewport boundaries rather than solid walls.
 func (ms *MovementSystem) isWalkable(tm *types.TileMap, x, y int) bool {
 	if x < 1 || y < 1 {
 		return false
@@ -31,7 +32,15 @@ func (ms *MovementSystem) isWalkable(tm *types.TileMap, x, y int) bool {
 	if x > tm.Width || y > tm.Height {
 		return false
 	}
-	ch := tm.At(x-1, y-1)
+
+	// Check if this is an outer wall position
+	mapX, mapY := x-1, y-1
+	if config.IsOuterWall(mapX, mapY, tm.Width, tm.Height) {
+		// Outer walls act as viewport boundaries, not solid collision
+		return true
+	}
+
+	ch := tm.At(mapX, mapY)
 	return !config.IsMapWall(ch)
 }
 
@@ -156,24 +165,29 @@ func (ms *MovementSystem) MovePlayer(player *types.Player, direction rune, tm *t
 
 	targetX := oldX + dx
 	targetY := oldY + dy
-	// Always keep coordinates at least 1-based (interior of the game view)
-	if targetX < 1 {
-		targetX = 1
-	}
-	if targetY < 1 {
-		targetY = 1
-	}
 
 	if tm != nil {
 		mapW, mapH := tm.Width, tm.Height
-		// Clamp to map bounds accounting for sprite footprint
-		maxX := mapW - wTiles + 1
-		maxY := mapH - hTiles + 1
-		if maxX < 1 {
-			maxX = 1
+
+		// Use viewport boundaries for collision (stay within outer walls)
+		// Players cannot move into or beyond the outer wall boundary
+		minX, minY := 2, 2        // Stay inside outer walls
+		maxX := mapW - wTiles - 1 // Account for sprite footprint and outer wall
+		maxY := mapH - hTiles - 1
+
+		if maxX < minX {
+			maxX = minX
 		}
-		if maxY < 1 {
-			maxY = 1
+		if maxY < minY {
+			maxY = minY
+		}
+
+		// Clamp to viewport boundaries
+		if targetX < minX {
+			targetX = minX
+		}
+		if targetY < minY {
+			targetY = minY
 		}
 		if targetX > maxX {
 			targetX = maxX
@@ -182,9 +196,17 @@ func (ms *MovementSystem) MovePlayer(player *types.Player, direction rune, tm *t
 			targetY = maxY
 		}
 
-		// Check wall collision for the footprint rectangle
+		// Check wall collision for the footprint rectangle (excluding outer walls)
 		if !ms.isWalkableRect(tm, targetX, targetY, wTiles, hTiles) {
 			return false
+		}
+	} else {
+		// Fallback when no tilemap - keep coordinates positive
+		if targetX < 1 {
+			targetX = 1
+		}
+		if targetY < 1 {
+			targetY = 1
 		}
 	}
 

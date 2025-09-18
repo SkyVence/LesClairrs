@@ -9,7 +9,7 @@ type Stage struct {
 	WorldID        int
 	StageNb        int
 	Name           string
-	Enemies        []Enemy
+	Enemies        []EnemySpawn
 	ClearingReward int
 }
 

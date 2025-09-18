@@ -3,6 +3,7 @@ package game
 import (
 	"strings"
 
+	"projectred-rpg.com/config"
 	"projectred-rpg.com/game/types"
 )
 
@@ -194,6 +195,7 @@ func (gr *GameRenderer) computeLayout(player *types.Player) {
 }
 
 // renderMap draws the tile map into the grid, clipped within borders
+// Skips rendering outer wall characters (first/last row/column) but keeps them in map data
 func (gr *GameRenderer) renderMap(grid [][]rune) {
 	if gr.tileMap == nil {
 		return
@@ -207,6 +209,13 @@ func (gr *GameRenderer) renderMap(grid [][]rune) {
 			if ch == 0 {
 				ch = ' '
 			}
+
+			// Skip rendering outer walls (first/last row/column of the map)
+			// but keep them in the map data for collision detection
+			if gr.isOuterWall(mapX, mapY) {
+				ch = ' ' // Render as empty space instead
+			}
+
 			sy := gr.innerY + 1 + y
 			sx := gr.innerX + 1 + x
 			if sy >= 0 && sy < gr.height && sx >= 0 && sx < gr.width {
@@ -214,6 +223,15 @@ func (gr *GameRenderer) renderMap(grid [][]rune) {
 			}
 		}
 	}
+}
+
+// isOuterWall checks if the given map coordinates are on the outer border
+func (gr *GameRenderer) isOuterWall(mapX, mapY int) bool {
+	if gr.tileMap == nil {
+		return false
+	}
+	// Use the config function to check for outer walls
+	return config.IsOuterWall(mapX, mapY, gr.tileMap.Width, gr.tileMap.Height)
 }
 
 // renderPlayer draws the player sprite on the grid using viewport offset

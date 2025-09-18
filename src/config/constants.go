@@ -25,15 +25,17 @@ const (
 	// TileEmpty is unused/blank space in the map
 	TileEmpty rune = ' '
 	// TileFloor is walkable ground
-	TileFloor rune = '.'
+	TileFloor rune = ' '
 	// TileWall is a solid wall
-	TileWall rune = '#'
+	TileWall rune = ']'
 )
 
 // MapWallChars lists all characters considered solid map walls.
 // Extend this slice if you introduce new wall glyphs in your .map files.
 var MapWallChars = []rune{
 	TileWall,
+	'│', '─', '┌', '┐', '└', '┘', // Box drawing characters
+	'╰', '╯', '╭', '╮', // Rounded box drawing characters
 }
 
 // IsMapWall returns true if the given rune is considered a wall (solid/impassable).
@@ -44,6 +46,11 @@ func IsMapWall(ch rune) bool {
 		}
 	}
 	return false
+}
+
+// IsOuterWall returns true if the given map coordinates are on the outer border
+func IsOuterWall(mapX, mapY, mapWidth, mapHeight int) bool {
+	return mapX == 0 || mapX == mapWidth-1 || mapY == 0 || mapY == mapHeight-1
 }
 
 // Default classes available in the game
