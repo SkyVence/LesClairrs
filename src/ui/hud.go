@@ -161,7 +161,7 @@ func (h *HUD) View() string {
 	// Build aligned World/Stage lines so their text starts at the same column
 	// Use localized names as primary source
 	worldName := locManager.Text("game.levels.world" + fmt.Sprint(h.worldID) + ".name")
-	stageName := locManager.Text("game.levels.world" + fmt.Sprint(h.worldID) + ".stages." + fmt.Sprint(h.stageID))
+	stageName := locManager.Text("game.levels.world" + fmt.Sprint(h.worldID) + ".stages." + fmt.Sprint(h.stageID) + ".name")
 
 	// If localized name is missing (shows as ⟦key⟧), fallback to manually set names
 	if strings.HasPrefix(worldName, "⟦") && strings.HasSuffix(worldName, "⟧") && h.worldName != "" {

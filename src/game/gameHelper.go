@@ -95,8 +95,3 @@ func (gr *GameRender) updateHUDStats() {
 		gr.hud.SetLocation(gr.gameInstance.CurrentWorld.Name, gr.gameInstance.CurrentStage.Name)
 	}
 }
-
-func (gr *GameRender) updateCombatHUD() {
-	// Combat UI is now handled directly by the combat system
-	// No need for separate update - the combat system manages its own UI
-}
