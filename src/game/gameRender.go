@@ -17,6 +17,7 @@ type GameRender struct {
 	movement      *systems.MovementSystem
 	combatSystem  *systems.CombatSystem
 	spawnerSystem *systems.SpawnerSystem
+	locManager    *engine.LocalizationManager
 
 	// UI Components
 	hud            *ui.HUD
@@ -89,6 +90,7 @@ func GameModel() *GameRender {
 		movement:      movement,
 		combatSystem:  combatSystem,
 		spawnerSystem: spawner,
+		locManager:    locManager,
 
 		mainMenu:       menu,
 		hud:            hud,
