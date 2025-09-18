@@ -129,9 +129,20 @@ go test ./...
 
 ## 📚 Documentation
 
-- [Architecture Guide](docs/architecture.md) - Detailed architecture explanation
-- [API Reference](docs/api.md) - Package and function documentation
-- [Asset Format](docs/assets.md) - Asset file format specifications
+📖 **[Complete Documentation Index](docs/README.md)** - Start here to find the right documentation for your needs
+
+### For Game Developers
+- 🎮 [Game Developer API](docs/game-developer-api.md) - Complete guide for building games with ProjectRed
+- 📚 [Legacy API Reference](docs/api.md) - Package and function documentation
+- 🏗️ [Architecture Guide](docs/architecture.md) - Detailed architecture explanation
+
+### For Engine Developers  
+- 🔧 [Engine Developer API](docs/engine-developer-api.md) - Low-level engine internals and extension guide
+- ⚙️ [Legacy Engine API](docs/engine-api.md) - Original engine documentation
+
+### Asset & Performance
+- 📦 [Asset Format](docs/assets.md) - Asset file format specifications
+- ⚡ [Performance Guide](docs/performance-guide.md) - Optimization tips
 
 ## 🤝 Contributing
 
