@@ -11,7 +11,6 @@ func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.C
 	switch msg.Rune {
 	case '↑', '↓', '←', '→':
 		if gr.gameState.CurrentState == systems.StateExploration {
-			// Use movement system with map-based collision and bounds
 			_ = gr.movement.MovePlayer(gr.gameInstance.Player, msg.Rune, gr.currentMap)
 
 			if gr.combatSystem.TryEngageCombat(gr.gameInstance.Player) {
@@ -22,6 +21,11 @@ func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.C
 		}
 	case 'm':
 		gr.gameState.ChangeState(systems.StateMerchant)
+		return gr, nil
+	case 'p':
+		if gr.gameState.CurrentState == systems.StateExploration {
+			gr.transitionToNextLevel()
+		}
 		return gr, nil
 	}
 
