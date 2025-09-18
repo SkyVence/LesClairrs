@@ -3,6 +3,7 @@ package systems
 import (
 	"fmt"
 	"math/rand"
+
 	"projectred-rpg.com/engine"
 	"projectred-rpg.com/game/entities"
 	"projectred-rpg.com/game/types"
@@ -16,7 +17,7 @@ type CombatSystem struct {
 	CurrentEnemy        *entities.Enemy
 	locManager          *engine.LocalizationManager
 	spawnerSystem       *SpawnerSystem
-	combatUI           *ui.CombatUI
+	combatUI            *ui.CombatUI
 }
 
 // NewCombatSystem creates a new combat system instance
@@ -26,7 +27,7 @@ func NewCombatSystem(initialState types.CombatState, locManager *engine.Localiza
 		PreviousCombatState: initialState,
 		locManager:          locManager,
 		spawnerSystem:       spawnerSystem,
-		combatUI:           nil, // Will be initialized later when renderer is available
+		combatUI:            nil, // Will be initialized later when renderer is available
 	}
 }
 
@@ -51,7 +52,7 @@ func (cs *CombatSystem) IsInCombat() bool {
 func (cs *CombatSystem) EnterCombat(e *entities.Enemy, p *types.Player) {
 	cs.CurrentEnemy = e
 	cs.ChangeCombatState(types.PlayerTurn)
-	
+
 	// Set up the combat UI if available
 	if cs.combatUI != nil {
 		cs.combatUI.SetCombatants(p, e)
@@ -67,25 +68,25 @@ func (cs *CombatSystem) AiAttack(e entities.Enemy, p *types.Player) {
 	if damage < 1 {
 		damage = 1
 	}
-	
+
 	// Add some randomness to AI attacks
 	damage += rand.Intn(3) - 1 // -1 to +1 variation
 	if damage < 1 {
 		damage = 1
 	}
-	
+
 	// Apply damage
 	p.Stats.CurrentHP -= damage
 	if p.Stats.CurrentHP < 0 {
 		p.Stats.CurrentHP = 0
 	}
-	
+
 	// Log the action
 	message := fmt.Sprintf("%s attacks %s for %d damage!", e.Name, p.Name, damage)
 	if cs.combatUI != nil {
 		cs.combatUI.AddAction(e.Name, "Attack", p.Name, damage, message)
 	}
-	
+
 	// Check if player is defeated
 	if cs.IsPlayerDefeated(p) {
 		cs.ChangeCombatState(types.Dead)
@@ -107,7 +108,7 @@ func (cs *CombatSystem) PlayerAttack(e *entities.Enemy, p *types.Player) {
 	if cs.combatUI != nil {
 		cs.combatUI.AddAction(p.Name, "Attack", e.Name, damage, message)
 	}
-	
+
 	defeated := e.TakeDamage(damage)
 	if defeated {
 		cs.ChangeCombatState(types.Victory)
@@ -146,7 +147,7 @@ func (cs *CombatSystem) PlayerRun(p *types.Player) bool {
 	if successChance > 90 {
 		successChance = 90 // Cap at 90%
 	}
-	
+
 	if rand.Intn(100) < successChance {
 		message := fmt.Sprintf("%s successfully runs away!", p.Name)
 		if cs.combatUI != nil {
@@ -228,7 +229,7 @@ func (cs *CombatSystem) ProcessPlayerAction(action string, p *types.Player) bool
 	if cs.CurrentCombatState != types.PlayerTurn || cs.CurrentEnemy == nil {
 		return false
 	}
-	
+
 	switch action {
 	case "Attack":
 		cs.PlayerAttack(cs.CurrentEnemy, p)
@@ -249,7 +250,7 @@ func (cs *CombatSystem) ProcessPlayerAction(action string, p *types.Player) bool
 	default:
 		return false
 	}
-	
+
 	return true
 }
 
@@ -258,7 +259,7 @@ func (cs *CombatSystem) Update(p *types.Player) {
 	if cs.CurrentCombatState == types.EnemyTurn && cs.CurrentEnemy != nil {
 		cs.AiAttack(*cs.CurrentEnemy, p)
 	}
-	
+
 	// Update the combat UI display
 	if cs.IsInCombat() && cs.combatUI != nil {
 		cs.combatUI.Display()

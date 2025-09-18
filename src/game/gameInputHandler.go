@@ -140,9 +140,9 @@ func (gr *GameRender) handleCombatInput(msg engine.KeyMsg) {
 	if gr.combatSystem.CurrentCombatState != types.PlayerTurn {
 		return // Only handle input during player turn
 	}
-	
+
 	combatUI := gr.combatSystem.GetCombatUI()
-	
+
 	switch msg.Rune {
 	case '↑':
 		combatUI.SelectPrevAction()

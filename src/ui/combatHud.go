@@ -29,26 +29,26 @@ type CombatHistory struct {
 
 // CombatUI represents the full-screen turn-based combat interface
 type CombatUI struct {
-	width          int
-	height         int
-	termWidth      int
-	termHeight     int
-	renderer       engine.Renderer
-	locManager     *engine.LocalizationManager
-	
+	width      int
+	height     int
+	termWidth  int
+	termHeight int
+	renderer   engine.Renderer
+	locManager *engine.LocalizationManager
+
 	// Combat state
-	player         *types.Player
-	enemy          *entities.Enemy
-	currentTurn    types.CombatState
-	history        *CombatHistory
-	
+	player      *types.Player
+	enemy       *entities.Enemy
+	currentTurn types.CombatState
+	history     *CombatHistory
+
 	// UI state
-	selectedAction int
+	selectedAction   int
 	availableActions []string
-	showHistory    bool
-	
+	showHistory      bool
+
 	// Styles
-	styles         CombatUIStyles
+	styles CombatUIStyles
 }
 
 // CombatUIStyles contains all styling for the combat interface
@@ -80,7 +80,7 @@ func NewCombatHistory(maxActions int) *CombatHistory {
 // AddAction adds a new action to the combat history
 func (ch *CombatHistory) AddAction(action CombatAction) {
 	ch.Actions = append(ch.Actions, action)
-	
+
 	// Remove oldest actions if we exceed the maximum
 	if len(ch.Actions) > ch.MaxActions {
 		ch.Actions = ch.Actions[1:]
@@ -103,19 +103,19 @@ func (ch *CombatHistory) Clear() {
 // NewCombatUI creates a new combat UI instance
 func NewCombatUI(renderer engine.Renderer, locManager *engine.LocalizationManager) *CombatUI {
 	width, height := renderer.GetSize()
-	
+
 	return &CombatUI{
-		width:          width,
-		height:         height,
-		termWidth:      width,
-		termHeight:     height,
-		renderer:       renderer,
-		locManager:     locManager,
-		history:        NewCombatHistory(50), // Keep last 50 actions
-		selectedAction: 0,
+		width:            width,
+		height:           height,
+		termWidth:        width,
+		termHeight:       height,
+		renderer:         renderer,
+		locManager:       locManager,
+		history:          NewCombatHistory(50), // Keep last 50 actions
+		selectedAction:   0,
 		availableActions: []string{"Attack", "Defend", "Use Item", "Run"},
-		showHistory:    false,
-		styles:         DefaultCombatUIStyles(),
+		showHistory:      false,
+		styles:           DefaultCombatUIStyles(),
 	}
 }
 
@@ -240,7 +240,7 @@ func (cui *CombatUI) renderHealthBar(current, max int, width int) string {
 	if max <= 0 {
 		return ""
 	}
-	
+
 	percentage := float64(current) / float64(max)
 	if percentage < 0 {
 		percentage = 0
@@ -248,13 +248,13 @@ func (cui *CombatUI) renderHealthBar(current, max int, width int) string {
 	if percentage > 1 {
 		percentage = 1
 	}
-	
+
 	filledWidth := int(float64(width) * percentage)
 	emptyWidth := width - filledWidth
-	
+
 	filled := strings.Repeat("█", filledWidth)
 	empty := strings.Repeat("░", emptyWidth)
-	
+
 	var color lipgloss.Color
 	if percentage > 0.6 {
 		color = lipgloss.Color("#4ECDC4") // Green
@@ -263,10 +263,10 @@ func (cui *CombatUI) renderHealthBar(current, max int, width int) string {
 	} else {
 		color = lipgloss.Color("#FF6B6B") // Red
 	}
-	
-	bar := lipgloss.NewStyle().Foreground(color).Render(filled) + 
-		  lipgloss.NewStyle().Foreground(lipgloss.Color("#333333")).Render(empty)
-	
+
+	bar := lipgloss.NewStyle().Foreground(color).Render(filled) +
+		lipgloss.NewStyle().Foreground(lipgloss.Color("#333333")).Render(empty)
+
 	return fmt.Sprintf("%s %d/%d", bar, current, max)
 }
 
@@ -275,16 +275,16 @@ func (cui *CombatUI) renderPlayerPanel() string {
 	if cui.player == nil {
 		return cui.styles.PlayerPanel.Render("No Player Data")
 	}
-	
+
 	content := fmt.Sprintf("%s\n", cui.styles.Title.Render(cui.player.Name))
 	content += fmt.Sprintf("Level: %d\n", cui.player.Stats.Level)
-	content += fmt.Sprintf("HP: %s\n", 
+	content += fmt.Sprintf("HP: %s\n",
 		cui.renderHealthBar(cui.player.Stats.CurrentHP, cui.player.Stats.MaxHP, 20))
 	content += fmt.Sprintf("ATK: %d\n", cui.player.Stats.Force)
 	content += fmt.Sprintf("DEF: %d\n", cui.player.Stats.Defense)
 	content += fmt.Sprintf("SPD: %d\n", cui.player.Stats.Speed)
 	content += fmt.Sprintf("ACC: %d", cui.player.Stats.Accuracy)
-	
+
 	return cui.styles.PlayerPanel.Render(content)
 }
 
@@ -293,15 +293,15 @@ func (cui *CombatUI) renderEnemyPanel() string {
 	if cui.enemy == nil {
 		return cui.styles.EnemyPanel.Render("No Enemy Data")
 	}
-	
+
 	content := fmt.Sprintf("%s\n", cui.styles.Title.Render(cui.enemy.Name))
-	content += fmt.Sprintf("HP: %s\n", 
+	content += fmt.Sprintf("HP: %s\n",
 		cui.renderHealthBar(cui.enemy.CurrentHP, cui.enemy.MaxHP, 20))
 	content += fmt.Sprintf("ATK: %d\n", cui.enemy.Force)
 	content += fmt.Sprintf("DEF: %d\n", cui.enemy.Defense)
 	content += fmt.Sprintf("SPD: %d\n", cui.enemy.Speed)
 	content += fmt.Sprintf("ACC: %d", cui.enemy.Accuracy)
-	
+
 	return cui.styles.EnemyPanel.Render(content)
 }
 
@@ -321,9 +321,9 @@ func (cui *CombatUI) renderActionPanel() string {
 		}
 		return cui.styles.ActionPanel.Render(turnText)
 	}
-	
+
 	content := cui.styles.Title.Render("Choose Action") + "\n\n"
-	
+
 	for i, action := range cui.availableActions {
 		if i == cui.selectedAction {
 			content += cui.styles.SelectedAction.Render(fmt.Sprintf("> %s", action)) + "\n"
@@ -331,10 +331,10 @@ func (cui *CombatUI) renderActionPanel() string {
 			content += cui.styles.NormalAction.Render(fmt.Sprintf("  %s", action)) + "\n"
 		}
 	}
-	
+
 	content += "\n" + cui.styles.Text.Render("Use ↑↓ to select, Enter to confirm")
 	content += "\n" + cui.styles.Text.Render("Press H to toggle history")
-	
+
 	return cui.styles.ActionPanel.Render(content)
 }
 
@@ -343,9 +343,9 @@ func (cui *CombatUI) renderHistoryPanel(maxLines int) string {
 	if !cui.showHistory {
 		return ""
 	}
-	
+
 	content := cui.styles.Title.Render("Combat History") + "\n\n"
-	
+
 	recentActions := cui.history.GetRecentActions(maxLines - 2)
 	if len(recentActions) == 0 {
 		content += cui.styles.Text.Render("No actions yet...")
@@ -361,23 +361,23 @@ func (cui *CombatUI) renderHistoryPanel(maxLines int) string {
 			content += line + "\n"
 		}
 	}
-	
+
 	return cui.styles.HistoryPanel.Render(content)
 }
 
 // Render creates the complete combat UI
 func (cui *CombatUI) Render() string {
 	cui.UpdateSize()
-	
+
 	// Calculate available space
 	minWidth := 80  // Minimum width for proper display
 	minHeight := 20 // Minimum height for proper display
-	
+
 	if cui.termWidth < minWidth || cui.termHeight < minHeight {
 		// Small screen mode - simplified layout
 		return cui.renderSmallScreen()
 	}
-	
+
 	// Full screen mode
 	return cui.renderFullScreen()
 }
@@ -385,27 +385,27 @@ func (cui *CombatUI) Render() string {
 // renderSmallScreen renders a simplified layout for small terminals
 func (cui *CombatUI) renderSmallScreen() string {
 	content := cui.styles.Title.Render("COMBAT") + "\n\n"
-	
+
 	// Player stats (compact)
 	if cui.player != nil {
-		content += fmt.Sprintf("You: %s (HP: %d/%d)\n", 
+		content += fmt.Sprintf("You: %s (HP: %d/%d)\n",
 			cui.player.Name, cui.player.Stats.CurrentHP, cui.player.Stats.MaxHP)
 	}
-	
+
 	// Enemy stats (compact)
 	if cui.enemy != nil {
-		content += fmt.Sprintf("Enemy: %s (HP: %d/%d)\n\n", 
+		content += fmt.Sprintf("Enemy: %s (HP: %d/%d)\n\n",
 			cui.enemy.Name, cui.enemy.CurrentHP, cui.enemy.MaxHP)
 	}
-	
+
 	// Recent history (last 3 actions)
 	recentActions := cui.history.GetRecentActions(3)
 	for _, action := range recentActions {
 		content += fmt.Sprintf("• %s\n", action.Message)
 	}
-	
+
 	content += "\n"
-	
+
 	// Actions
 	if cui.currentTurn == types.PlayerTurn {
 		content += "Actions:\n"
@@ -419,7 +419,7 @@ func (cui *CombatUI) renderSmallScreen() string {
 	} else {
 		content += "Enemy turn...\n"
 	}
-	
+
 	return cui.styles.Container.Render(content)
 }
 
@@ -432,13 +432,13 @@ func (cui *CombatUI) renderFullScreen() string {
 		strings.Repeat(" ", 4), // Spacer
 		cui.renderEnemyPanel(),
 	)
-	
+
 	// Calculate remaining space for middle section
 	historyHeight := cui.termHeight - 15 // Reserve space for top and bottom sections
 	if historyHeight < 5 {
 		historyHeight = 5
 	}
-	
+
 	// Middle section: History (if shown) or spacer
 	var middleSection string
 	if cui.showHistory {
@@ -448,17 +448,17 @@ func (cui *CombatUI) renderFullScreen() string {
 		recentActions := cui.history.GetRecentActions(3)
 		content := cui.styles.Title.Render("Recent Actions") + "\n\n"
 		for _, action := range recentActions {
-			content += cui.styles.Text.Render("• " + action.Message) + "\n"
+			content += cui.styles.Text.Render("• "+action.Message) + "\n"
 		}
 		if len(recentActions) == 0 {
 			content += cui.styles.Text.Render("No actions yet...")
 		}
 		middleSection = cui.styles.HistoryPanel.Render(content)
 	}
-	
+
 	// Bottom section: Action panel
 	bottomSection := cui.renderActionPanel()
-	
+
 	// Combine all sections
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
