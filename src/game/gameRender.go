@@ -16,7 +16,7 @@ type GameRender struct {
 
 	// UI Components
 	mainMenu       ui.Menu
-	classSelection ui.Menu
+	classSelection ui.ClassMenu
 	hud            *ui.HUD
 
 	// Screen/Renderer Settings
@@ -44,22 +44,8 @@ func InitMainMenu(locManager *engine.LocalizationManager) ui.Menu {
 	return menu
 }
 
-func InitializeClassSelection(locManager *engine.LocalizationManager, classes []types.Class) ui.Menu {
-	// Debug: Check if we have classes
-	// fmt.Printf("Classes received: %d\n", len(classes))
-
-	if len(classes) == 0 {
-		// Create fallback classes if none provided
-		// fmt.Println("No classes provided, creating fallback")
-		menuOptions := []ui.MenuOption{
-			{Label: "Cyber-Samurai", Value: "Cyber-Samurai"},
-			{Label: "Tech-Ninja", Value: "Tech-Ninja"},
-			{Label: "Data-Mage", Value: "Data-Mage"},
-		}
-		return ui.NewMenu("Select Your Class", menuOptions)
-	}
-
-	menuOptions := []ui.MenuOption{}
+func InitializeClassSelection(locManager *engine.LocalizationManager, classes []types.Class) ui.ClassMenu {
+	menuOptions := []ui.ClassMenuOption{}
 	for _, class := range classes {
 		label := class.Name
 		if locManager != nil {
@@ -68,34 +54,20 @@ func InitializeClassSelection(locManager *engine.LocalizationManager, classes []
 				label = translatedLabel
 			}
 		}
-		menuOptions = append(menuOptions, ui.MenuOption{
+		menuOptions = append(menuOptions, ui.ClassMenuOption{
 			Label: label,
 			Value: class.Name,
+			Desc:  class.Description,
+			Stats: ui.ClassStats{
+				MaxHP:    class.MaxHP,
+				Force:    class.Force,
+				Speed:    class.Speed,
+				Defense:  class.Defense,
+				Accuracy: class.Accuracy,
+			},
 		})
 	}
-
-	// Debug: Check menu options
-	// fmt.Printf("Menu options created: %d\n", len(menuOptions))
-
-	title := "Select Your Class"
-	if locManager != nil {
-		translatedTitle := locManager.Text("ui.class.menuname")
-		if translatedTitle != "" && translatedTitle != "ui.class.menuname" {
-			title = translatedTitle
-		}
-	}
-
-	// Try to create menu with art first
-	menu, err := ui.NewMenuWithArtFromFile(title, menuOptions, "assets/logo.txt")
-	if err != nil {
-		// Debug: Log the error
-		// fmt.Printf("Failed to create menu with art: %v\n", err)
-		menu = ui.NewMenu(title, menuOptions)
-	}
-
-	// Debug: Check if menu was created
-	// fmt.Printf("Menu created successfully: %v\n", menu != nil)
-
+	menu := ui.NewClassMenu(locManager.Text("ui.class.menu.name"), menuOptions, locManager)
 	return menu
 }
 
@@ -278,17 +250,6 @@ func (gr *GameRender) handleMainMenuInput(msg engine.KeyMsg) (engine.Model, engi
 		case "start":
 			// Transition to class selection
 			gr.gameState.ChangeState(systems.StateClassSelection)
-
-			// Create a simple fallback menu for testing
-			menuOptions := []ui.MenuOption{
-				{Label: "Cyber-Samurai", Value: "Cyber-Samurai"},
-				{Label: "Tech-Ninja", Value: "Tech-Ninja"},
-				{Label: "Data-Mage", Value: "Data-Mage"},
-			}
-
-			// Try simple menu creation first
-			gr.classSelection = ui.NewMenu("Select Your Class", menuOptions)
-			// Ensure the newly created menu has current dimensions
 			gr.classSelection, _ = gr.classSelection.Update(engine.SizeMsg{Width: gr.screenWidth, Height: gr.screenHeight})
 
 			return gr, nil

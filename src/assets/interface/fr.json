@@ -34,7 +34,17 @@
 			"critical": "Coup critique ! {attacker} inflige {damage} points de dégâts à {defender}"
 		},
 		"class":{
-			"menuname":"Selection de la Classe",
+			"menu": {
+				"name":"Selection de la Classe",
+				"description": "Description",
+				"maxhp": "Points de Vie Max",
+				"force": "Force",
+				"speed": "Vitesse",
+				"defense": "Défense",
+				"accuracy": "Précision",
+				"startingStats": "Statistiques de Départ"
+
+			},
 			"doc":{
 				"name":"D0C",
 				"description":"Un robot médical intelligent, précis et polyvalent."

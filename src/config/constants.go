@@ -16,45 +16,15 @@
 package config
 
 import (
-	"time"
-
 	"projectred-rpg.com/game/types"
 )
-
-// Game balance constants
-const (
-	DefaultPlayerHealth = 100
-	MaxInventorySize    = 10
-	BaseExpRequirement  = 100
-	ExpGrowthRate       = 1.2
-
-	// Animation constants
-	DefaultAnimationSpeed = 200 * time.Millisecond
-	TickDuration          = 16 * time.Millisecond // ~60 FPS
-
-	// Display constants
-	DefaultTerminalWidth  = 80
-	DefaultTerminalHeight = 24
-	HUDHeight             = 5
-)
-
-// ClassConfig represents a character class configuration
-type ClassConfig struct {
-	Name        string
-	Description string
-	MaxHP       int
-	Force       int
-	Speed       int
-	Defense     int
-	Accuracy    int
-}
 
 // Default classes available in the game
 func GetDefaultClasses() []types.Class {
 	return []types.Class{
 		{
 			Name:        "ui.class.doc.name",
-			Description: "ui.class.doc.desc",
+			Description: "ui.class.doc.description",
 			MaxHP:       90,
 			Force:       10,
 			Speed:       12,
@@ -63,7 +33,7 @@ func GetDefaultClasses() []types.Class {
 		},
 		{
 			Name:        "ui.class.app.name",
-			Description: "ui.class.app.desc",
+			Description: "ui.class.app.description",
 			MaxHP:       80,
 			Force:       14,
 			Speed:       22,
@@ -72,7 +42,7 @@ func GetDefaultClasses() []types.Class {
 		},
 		{
 			Name:        "ui.class.per.name",
-			Description: "ui.class.per.desc",
+			Description: "ui.class.per.description",
 			MaxHP:       100,
 			Force:       15,
 			Speed:       12,

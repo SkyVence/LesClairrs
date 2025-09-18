@@ -1,164 +1,134 @@
-# 🎮 ProjectRed RPG
+# 📚 ProjectRed RPG Documentation Index
 
-A cyberpunk-themed terminal-based RPG developed in Go, featuring a modern architecture with clean separation of concerns.
+Welcome to the ProjectRed RPG documentation! This index helps you find the right documentation for your needs.
 
-## 🏗️ Project Structure
+## 🎯 Quick Start Guide
 
-```
-src/
-├── main.go                    # Entry point
-├── go.mod & go.sum           # Dependencies
-│
-├── config/                   # Configuration management
-│   ├── constants.go          # Game balance, defaults, class configs
-│   ├── paths.go             # Asset paths configuration
-│   └── engine.go            # Engine configuration
-│
-├── engine/                   # Game engine core
-│   ├── animation.go         # Animation system
-│   ├── engine.go           # Main engine wrapper
-│   ├── input.go            # Input handling
-│   ├── program.go          # Program lifecycle
-│   ├── renderer.go         # Rendering system
-│   └── tea.go              # Terminal UI framework
-│
-├── game/                     # Game logic
-│   ├── game.go              # Main game coordinator
-│   ├── render.go            # Game rendering logic
-│   │
-│   ├── types/               # Type definitions
-│   │   ├── player.go        # Player, Class, PlayerStats + methods
-│   │   ├── world.go         # World, Stage, Position + methods  
-│   │   ├── enemy.go         # Enemy types
-│   │   ├── items.go         # Item, Weapon, Attack types
-│   │   └── enums.go         # Enums (BodyParts, Rarity, ItemType)
-│   │
-│   ├── entities/            # Entity creation and management
-│   │   ├── player.go        # Player factory functions
-│   │   └── world.go         # World factory functions
-│   │
-│   ├── systems/             # Game systems
-│   │   ├── combat.go        # Combat calculations and logic
-│   │   ├── inventory.go     # Inventory management
-│   │   └── movement.go      # Movement and collision detection
-│   │
-│   └── loaders/             # Asset loading
-│       └── loadLevels.go    # World/level data loading
-│
-├── ui/                       # User interface components
-│   ├── hud.go              # Heads-up display
-│   ├── menu.go             # Menu systems
-│   └── spinner.go          # Loading indicators
-│
-└── assets/                   # Game assets
-    ├── data/               # Game data (weapons, enemies, etc.)
-    ├── animations/         # Animation files
-    ├── interface/          # UI localization files
-    └── levels/             # World and level definitions
-```
-
-## 🚀 Installation
-
-```bash
-git clone https://github.com/SkyVence/projet-red_rpg
-cd projet-red_rpg
-go mod tidy
-go run src/main.go
-```
-
-## 🎮 Controls
-
-- `↑`/`↓` `←`/`→` : Navigation
-- `Enter` : Select
-- `Esc` : Back/Quit
-
-## 🧩 Architecture Overview
-
-### **Types Package** (`game/types/`)
-Contains all core type definitions with their associated methods:
-- **Player**: Character data, stats, inventory management
-- **World/Stage**: Level structure and progression
-- **Enemy**: Opponent definitions and behavior
-- **Items**: Equipment and consumables
-
-### **Systems Package** (`game/systems/`)
-Implements game logic using a systems architecture:
-- **CombatSystem**: Damage calculations, battle mechanics
-- **InventorySystem**: Item management, equipment
-- **MovementSystem**: Player movement, collision detection
-
-### **Entities Package** (`game/entities/`)
-Factory functions for creating and initializing game entities:
-- Player creation with class selection
-- World loading and initialization
-
-### **Config Package** (`config/`)
-Centralized configuration management:
-- Game balance constants
-- Asset paths
-- Engine settings
-
-## 🎯 Key Features
-
-- **Clean Architecture**: Separation of concerns with dedicated packages
-- **Systems-Based Design**: Modular game logic systems
-- **Type Safety**: Strong typing with Go's type system
-- **Asset Management**: Structured asset loading and caching
-- **Terminal UI**: Modern terminal interface with animations
-- **Configurable**: Easy-to-modify game balance and settings
-
-## 🛠️ Development
-
-### Building
-```bash
-cd src
-go build .
-```
-
-### Running Tests
-```bash
-go test ./...
-```
-
-### Adding New Features
-
-1. **New Game Systems**: Add to `game/systems/`
-2. **New Entity Types**: Define in `game/types/`, create in `game/entities/`
-3. **New Assets**: Place in appropriate `assets/` subdirectory
-4. **Configuration**: Update `config/` files for new settings
-
-## 📚 Documentation
-
-📖 **[Complete Documentation Index](docs/README.md)** - Start here to find the right documentation for your needs
-
-### For Game Developers
-- 🎮 [Game Developer API](docs/game-developer-api.md) - Complete guide for building games with ProjectRed
-- 📚 [Legacy API Reference](docs/api.md) - Package and function documentation
-- 🏗️ [Architecture Guide](docs/architecture.md) - Detailed architecture explanation
-
-### For Engine Developers  
-- 🔧 [Engine Developer API](docs/engine-developer-api.md) - Low-level engine internals and extension guide
-- ⚙️ [Legacy Engine API](docs/engine-api.md) - Original engine documentation
-
-### Asset & Performance
-- 📦 [Asset Format](docs/assets.md) - Asset file format specifications
-- ⚡ [Performance Guide](docs/performance-guide.md) - Optimization tips
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Follow the existing architecture patterns
-4. Add tests for new functionality
-5. Submit a pull request
-
-## 📄 License
-
-This project is open source. See LICENSE file for details.
+**New to ProjectRed?** Start here:
+1. Read the [README](../README.md) for project overview
+2. Choose your documentation path based on your role:
+   - **Game Developer**: Building games with ProjectRed → [Game Developer API](#game-developer-documentation)
+   - **Engine Developer**: Extending the engine → [Engine Developer API](#engine-developer-documentation)
 
 ---
 
-**Développé en Go** | **Interface Terminal Moderne** | **Architecture Modulaire**
+## 🎮 Game Developer Documentation
 
---- 
-Documentation AI Generated from source files. Read Actual source code from better information
+*For developers building games using the ProjectRed framework*
+
+### Primary Documentation
+- **[Game Developer API](game-developer-api.md)** 📖  
+  *Complete guide for game development with ProjectRed*
+  - Game systems (combat, inventory, movement)
+  - Player and character management  
+  - World and stage progression
+  - Asset loading and configuration
+  - Complete examples and best practices
+
+### Supporting Documentation
+- **[API Reference](api.md)** 📚  
+  *Legacy package and function documentation*
+- **[Architecture Guide](architecture.md)** 🏗️  
+  *Detailed system architecture explanation*
+
+---
+
+## 🔧 Engine Developer Documentation
+
+*For developers extending or modifying the ProjectRed engine*
+
+### Primary Documentation
+- **[Engine Developer API](engine-developer-api.md)** ⚙️  
+  *Comprehensive engine internals and extension guide*
+  - Terminal control and rendering system
+  - Input handling and message system
+  - Animation framework
+  - Program lifecycle management
+  - Internationalization system
+  - Extension patterns and best practices
+
+### Supporting Documentation  
+- **[Legacy Engine API](engine-api.md)** 🔧  
+  *Original engine documentation (now superseded)*
+
+---
+
+## 📦 Asset & Performance Documentation
+
+*For all developers working with assets and optimization*
+
+- **[Asset Format](assets.md)** 📁  
+  *Asset file format specifications*
+- **[Performance Guide](performance-guide.md)** ⚡  
+  *Optimization tips and performance best practices*
+- **[Render Improvements](render-improvements.md)** 🖼️  
+  *Rendering system enhancements*
+
+---
+
+## 🗂️ Complete File List
+
+| File | Target Audience | Purpose |
+|------|----------------|---------|
+| [game-developer-api.md](game-developer-api.md) | Game Developers | **Primary**: Game development guide |
+| [engine-developer-api.md](engine-developer-api.md) | Engine Developers | **Primary**: Engine extension guide |
+| [api.md](api.md) | Game Developers | Legacy API reference |
+| [engine-api.md](engine-api.md) | Engine Developers | Legacy engine documentation |
+| [architecture.md](architecture.md) | All Developers | System architecture |
+| [assets.md](assets.md) | All Developers | Asset specifications |
+| [performance-guide.md](performance-guide.md) | All Developers | Performance optimization |
+| [render-improvements.md](render-improvements.md) | Engine Developers | Rendering enhancements |
+| [idea.md](idea.md) | All Developers | Project concepts |
+
+---
+
+## 🚀 Getting Started Workflows
+
+### Building Your First Game
+
+1. **Setup**: Follow [README installation](../README.md#installation)
+2. **Learn**: Read [Game Developer API](game-developer-api.md)
+3. **Examples**: Study the [complete examples](game-developer-api.md#complete-examples)
+4. **Build**: Start with the [simple game template](game-developer-api.md#simple-game-setup)
+
+### Extending the Engine
+
+1. **Understand**: Read [Engine Developer API](engine-developer-api.md)
+2. **Architecture**: Study [extending patterns](engine-developer-api.md#extending-the-engine)
+3. **Performance**: Review [best practices](engine-developer-api.md#best-practices)
+4. **Implement**: Create custom renderers or input handlers
+
+### Contributing to ProjectRed
+
+1. **Read**: Both API documentations to understand the full system
+2. **Study**: [Architecture Guide](architecture.md) for design principles
+3. **Follow**: [Contributing guidelines](../README.md#contributing)
+4. **Test**: Ensure changes work with existing games
+
+---
+
+## 🔍 Finding Specific Information
+
+| Looking for... | Check... |
+|----------------|----------|
+| How to create a player character | [Player System](game-developer-api.md#player-system) |
+| Combat mechanics | [Combat System](game-developer-api.md#combat-system) |
+| Terminal rendering | [Rendering System](engine-developer-api.md#rendering-system) |
+| Input handling | [Input Handling](engine-developer-api.md#input-handling) |
+| Animation system | [Animation System](engine-developer-api.md#animation-system) |
+| World progression | [World & Stage Management](game-developer-api.md#world--stage-management) |
+| Performance optimization | [Performance Guide](performance-guide.md) |
+| File formats | [Asset Format](assets.md) |
+
+---
+
+## 💡 Documentation Feedback
+
+Found something unclear or missing? Please:
+1. Check if it's covered in the other documentation files
+2. Create an issue describing what you need
+3. Consider contributing improvements via pull request
+
+---
+
+*This documentation is maintained by the ProjectRed community. Last updated: 2024*
