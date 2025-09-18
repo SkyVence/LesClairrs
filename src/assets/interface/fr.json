@@ -32,6 +32,21 @@
 			"heal": "{healer} soigne {amount} points de vie à {target}",
 			"miss": "{attacker} rate son attaque sur {defender}",
 			"critical": "Coup critique ! {attacker} inflige {damage} points de dégâts à {defender}"
+		},
+		"class":{
+			"menuname":"Selection de la Classe",
+			"doc":{
+				"name":"D0C",
+				"description":"Un robot médical intelligent, précis et polyvalent."
+			},
+			"app":{
+				"name":"APP",
+				"description":"Un robot apprenti furtif et agile."
+			},
+			"per":{
+				"name":"P3R",
+				"description":"Un robot de combat robuste et puissant."
+			}
 		}
 	},
 	"game": {
@@ -56,5 +71,6 @@
 			"consumable": "Aethelgard",
 			"weapon": "Valerius"
 		}
+
 	}
 }
