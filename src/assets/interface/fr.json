@@ -57,23 +57,148 @@
 				"name":"P3R",
 				"description":"Un robot de combat robuste et puissant."
 			}
+		},
+		"weapons":{
+			"katana":{
+				"name":"Katana",
+				"description":"Melee",
+				"attack1":"Frappe Spectrale",
+				"attack2":"Slah Holo",
+				"attack3":"Imbattable",
+				"attack4":"Lame Ethérée"
+			},
+			"faux neuralink":{
+				"name":"Faux Neuralink",
+				"description":"Melee",
+				"attack1":"Entaille",
+				"attack2":"Moisson Mentale",
+				"attack3":"Rythme Instinctif",
+				"attack4":"Danse Macabre"
+			},
+			"arc synaptique":{
+				"name":"Arc Synaptique",
+				"description":"Ranged",
+				"attack1":"Carreau EM",
+				"attack2":"Lien Conducteur",
+				"attack3":"Flèche Paralysante",
+				"attack4":"Tempête Ionique"
+			},
+			"sniper":{
+				"name":"SN1P3R",
+				"description":"Ranged",
+				"attack1":"Tir Balistique",
+				"attack2":"Coup de Grâce",
+				"attack3":"Marqueur Optique",
+				"attack4":"H34DSH0T"
+			},
+			"neon reaver":{
+				"name":"Neon Reaver",
+				"description":"Ranged",
+				"attack1":"Tir Photonique",
+				"attack2":"CHARGER!!",
+				"attack3":"GRENADE!",
+				"attack4":"Vortex Implosif"
+			}
 		}
 	},
-	"game": {
+"game": {
 		"levels": {
 			"world1": {
 				"name": "MEILAND",
 				"stages": {
-					"1": "La fosse",
-					"2": "Centre-Ville",
-					"3": "Frontière NULL"
+					"1": {
+						"name": "La fosse",
+						"dialogue": {
+							"aethelgard1": "T'as le coup de main. Qu'est ce que tu fais dans ce trou. T'es sur ma propriété",
+							"sam1": "Gngng on est où blabla t'es ki",
+							"aethelgard2": "On est à MEILAND, tu vis dans une cave tu me coco pas, le meilleur businessman de toute l'histoire Aethelgard en chair et un des derniers en 100% os. Encore une fois… tu fais quoi dans MA mine?",
+							"sam2": "Je viens de me réveiller j'ai pas toutes les idées en place.",
+							"aethelgard3": "T'as le sens de la fête, et le combat dans le fuel. Je te propose un deal, tu jettes un coup d'œil à ma boutique, et je te laisse tranquille.",
+							"aethelgard4": "J'ai des armes, des potions, des armures, et même des trucs que j'ai pas le droit de vendre. Tu veux quoi? Que nos chemins se recroisent ! en attendant, dégage de ma pelouse."
+						}
+					},
+					"2": {
+						"name": "Centre-Ville",
+						"dialogue": {
+							"foule1": "ENVAHISSEURS, DÉGAGEZ ! DICTATEURS, AU BÛCHER !",
+							"sam1": "Pourquoi vous manifestez?",
+							"passant1": "Ca fait depuis la fin de la guerre et la chute du dernier gouverneur qu'on est affamé pendant que le CLAIR utilisent notre sueur et notre sang pour remplir leur ventre et leurs placards",
+							"sam2": "Le CLAIR?",
+							"passant2": "Le Comité de Liquidation des Activités Inutiles et des Réformes Révolutionnaires, ils ont profité du système instable pour prendre le pouvoir. Mais d'où tu sors ? Ca fait 15 ans que le monde n'est plus ronds !",
+							"general1": "Nous avons l'autorisation d'ouvrir le feu, dispersez-vous ou subissez les conséquences.",
+							"foule2": "ON MEURT DE FAIM ET DEMALADIE, ON NE VOUS LAISSERA PAS NOUS RETIRER AUSSI NOTRE LIBERTÉ DE NOUS EXPRIMER.",
+							"general2": "Unité, en position de tire ! (pause) Feu !",
+							"valerius1": "Sam ! Attrape et mets le dans ton avant bras !",
+							"sam3": "Valerius ?",
+							"valerius2": "J'ai croisé Aethelgard sur sa tournée du monde. Il m'a parlé de toi. Quand, il m'a dit ce que tu étais, j'ai pas perdu de temps pour te trouver.",
+							"sam4": "Ce que je suis ? Comment tu sais que mon bras pouvais subir des améliorations ?",
+							"valerius3": "Tout ton corp peut, t'es un PROD, t'as été conçu pour protéger et servir le peuple. Tout tes confrères ont été vaincu pendant la guerre… sauf toi. T'es une modification cybernétique, basé sur le corp humain, programmée pour les missions et les combats. Ton système d'adaptation et tes capacités motrices sont uniques et ton système d'amélioration fascinant. Tu devrais trouver plus d'amélioration dans ces gros costauds du CLAIRR. Tu ferais mieux de les trouver avant qu'ils te trouvent."
+						}
+					},
+					"3": {
+						"name": "Frontière NULL",
+						"dialogue": {
+							"general1": "PROD. La guerre est fini rentre chez toi et reste planqué, ce n'est plus ton combat",
+							"sam1": "Valerius m'a raconté qui vous êtes. Vous n'êtes pas des soldats ordinaires.",
+							"general2": "Aah Valerius, une vrai douée de ses mains. Elle t'a aussi sûrement raconté qu'elle était ingénieure pour le CLAIRR et que tous ces robots que tu vois dans la rue ainsi que toutes nos machines de guerre sont conçuespar elle. Elle est la pionnière de notre arrivée au pouvoir. Vois-tu, le monde était corrompu des mensonges créés par les humains comme elle. Nous avons remis le monde sur les routes de la confiance et de la vérité.",
+							"sam2": "En massacrant tous ceux qui s'oppose à vous, comme vous l'avez fait aujourd'hui.",
+							"general3": "Ce que tu as vu aujourd'hui n'a rien à voir, ce n'était qu'un simple malentendu avec les civils, rien de plus. Ils n'ont pas écouté, je les avais prévenu. En revanche, j'ai trouvé ta performance très humiliante.Et m'humilier en publique et quelque chose qui n'arrive jamais",
+							"sam3": "Sam Il y a un début à tout je suppose.",
+							"general4": "LA FERME ! Ton arrogance te mènera à ta perte. Ton voyage et ton espèce s'arrête au pied de cette frontière."
+						}
+					}
 				}
 			},
 			"world2": {
 				"name": "CYBER DISTRICT",
 				"stages": {
-					"1": "Secteur Alpha",
-					"2": "Réseau Central"
+					"1": {
+						"name": "Secteur Alpha",
+						"dialogue": {
+							"aethelgard1": "Sam ! Mon client préféré ! Alors d'humeur à faire des emplettes ? J'ai un bon plan pour toi. T'as déjà entendu parler de Grimshaw ? Evidemment que non, il parcourt les galaxies. T'as plus de chance de te faire écraser par une météorite que de le croiser. Mais son ton jour de chance ! Il fait une pose dans le coin pour quelque mois. C'est un bon gars même s'il est très flippant à première vue. Faut croire que les voyages intergalactique ne le réussissent pas. Bref tu devrais le trouver en mode mystérieux vers le magasin de Valerius à quelque mettre. Loupe pas ta chance, à plus poto !",
+							"sam1": "Grimshaw ?",
+							"grimshaw1": "...",
+							"sam2": "C'est Aethelgard qui m'envoie, t'aurais quelque chose pour moi.",
+							"grimshaw2": "Regardes",
+							"sam3": "Et comment ça marche ?",
+							"grimshaw3": "Tu te le plante dans le coeur et t'injectes. Si tu veux autre chose j'ai pas le temps.",
+							"valerius1": "Salut champion, prêt à sauver le monde ? J'ai ce qu'il te faut en puissance de feu et c'est du home made !",
+							"sam4": "T'as bossé pour le CLAIRR ?",
+							"valerius2": "CHHHHT ! Qui t'as dit ça ?",
+							"sam5": "J'ai eu le droit à un date avec le général.",
+							"valerius3": "Ecoute, j'ai fait de mauvaise décision dans ma vie, mais bosser pour le CLAIRR n'était pas un choix. Je travaillais pour l'ancien gouvernement il y a 15 ans. J'étais Ministre des armés et avait ma propre industrie d'arme à feu. Quand le peuple s'est révolté contre le gouvernement, le CLAIRR est arrivé et s'est annoncé être du côté du peuple. A ce moment là, c'était le CLAIRR et le peuple contre le gouvernement. Une fois leur la guerre gagnée, j'ai été prise pour prisonnière et forcé de bosser pour eux. Aethelgard, marchand de père en fils, famille de bourgeois. est un ami de vieille date. Grâce à un beau chèque, il a pu acheter ma liberté sans que le CLAIRR me traque. En échange ils ont gardé tous mes plans d'armes ainsi que mon usine.",
+							"sam6": "Comment Aethelgard et toi réussissez à échapper au CLAIRR si longtemps?",
+							"valerius4": "Aethelgarde grâce à son héritage, et moi grâce à Grimshaw.",
+							"sam7": "Grimshaw ? Le voyageur ?",
+							"valerius5": "Lui non plus n'à pas choisi d'être comme ça… écoute j'aimerais beaucoup t'en apprendre plus mais t'as un système à faire tomber et une guerre à terminer. On en parlera une fois que tout sera fini.",
+							"sam8": "Comment tu sais que j'y arriverais.",
+							"valerius6": "On le sait, maintenant part…"
+						}
+					},
+					"2": {
+						"name": "Réseau Central",
+						"dialogue": {
+							"passant1": "PROD ! Tu n'es pas la bienvenue ici.",
+							"sam1": "Je ne suis pas votre ennemi, je suis là pour vous rendre la liberté.",
+							"passant2": "OH quel bon saint maritain… nous n'avons jamais été plus libres que grâce au CLAIRR. Ils ont entendu nos prières et nous ont sauvé de l'emprise du mal. Notre monde retrouvera sa grandeur et lorsque le MEILAND se pliera aux règles, plus rien ni personne ne pourra nous arrêter, pas même toi, relique.",
+							"sam2": "Ecoutez, ma mission n'est pas de vous faire du mal, alors vous allez tout simplement prétendre que vous ne m'avez pas vu, et nous allons tous continuer notre vie tranquillement, sans rayures.",
+							"passant3": "Et trahir la parole des Dieux CLAIRR tout puissant ? Nous répendrons leurs paroles à travers les galaxies, et éliminerons toutes personnes s'opposant à lui. À commencer par toi.",
+							"sam3": "Est ce que vous vous écoutez parler ? Tout ce que vous dites n'a aucun sens.",
+							"systeme1": "Vous dénigrez l'image du CLAIRR. Il est illégal de salir l'image des sauveurs sous peine de mort. Nous avons le devoir de vous exécuter, merci de bien vouloir rester calme le temps que nous procédons à votre exécution.",
+							"sam4": "C'est bon vous avez fini ?",
+							"scientifique1": "Pour être tout à fait honnête, j'ai un tout nouveau prototype à faire essayer.",
+							"sam5": "Vous êtes qui vous encore ?",
+							"scientifique2": "Ça n'a plus vraiment d'importance. En revanche, voici VAL 9020.",
+							"sam6": "Valérius ?",
+							"sam7": "Je suis désolé Valérius…",
+							"grimshaw1": "Ce n'était pas elle",
+							"sam8": "Grimshaw ? Où est Valérius ?",
+							"grimshaw2": "Avec Aethelgard, ils ont pris de l'avance.",
+							"sam9": "Vous me suivez depuis le début ?",
+							"grimshaw3": "On connaît tous tes déplacements, tes erreurs, passés, présents et futurs. Pas le temps pour du blabla. Achète toi un truc et reprends ta route.",
+							"grimshaw4": "Aethelgard et Valerius t'attendent. Traînes pas."
+						}
+					}
 				}
 			}
 		},
@@ -81,6 +206,5 @@
 			"consumable": "Aethelgard",
 			"weapon": "Valerius"
 		}
-
 	}
 }
