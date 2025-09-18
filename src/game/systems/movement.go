@@ -15,6 +15,10 @@ func NewMovementSystem() *MovementSystem {
 	return &MovementSystem{}
 }
 
+// spriteFootprintTiles returns the collision footprint in tiles.
+// For now, keep it 1x1 to decouple from the rendered sprite.
+func (ms *MovementSystem) spriteFootprintTiles(player *types.Player) (int, int) { return 4, 3 }
+
 // isWalkable returns true if (x,y) is within map bounds and not a wall.
 // x,y are 1-based player coordinates. When tm is nil, treat all tiles as walkable.
 func (ms *MovementSystem) isWalkable(tm *types.TileMap, x, y int) bool {
@@ -31,6 +35,28 @@ func (ms *MovementSystem) isWalkable(tm *types.TileMap, x, y int) bool {
 	return !config.IsMapWall(ch)
 }
 
+// isWalkableRect checks a rectangle region of size (w x h) at top-left (x,y) for collisions and bounds.
+// Returns true if all covered tiles are walkable.
+func (ms *MovementSystem) isWalkableRect(tm *types.TileMap, x, y, w, h int) bool {
+	if x < 1 || y < 1 || w < 1 || h < 1 {
+		return false
+	}
+	if tm == nil {
+		return true
+	}
+	if x+w-1 > tm.Width || y+h-1 > tm.Height {
+		return false
+	}
+	for yy := y; yy < y+h; yy++ {
+		for xx := x; xx < x+w; xx++ {
+			if !ms.isWalkable(tm, xx, yy) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 // EnsureValidSpawn adjusts the player's position if it's inside a wall or out of bounds.
 // It tries to find the nearest walkable tile using a simple expanding diamond search.
 func (ms *MovementSystem) EnsureValidSpawn(player *types.Player, tm *types.TileMap) {
@@ -38,7 +64,8 @@ func (ms *MovementSystem) EnsureValidSpawn(player *types.Player, tm *types.TileM
 		return
 	}
 	px, py := player.Pos.X, player.Pos.Y
-	if ms.isWalkable(tm, px, py) {
+	wTiles, hTiles := ms.spriteFootprintTiles(player)
+	if ms.isWalkableRect(tm, px, py, wTiles, hTiles) {
 		return
 	}
 
@@ -68,7 +95,7 @@ func (ms *MovementSystem) EnsureValidSpawn(player *types.Player, tm *types.TileM
 	for r := 0; r <= maxRadius; r++ {
 		// Check center first when r==0
 		if r == 0 {
-			if ms.isWalkable(tm, startX, startY) {
+			if ms.isWalkableRect(tm, startX, startY, wTiles, hTiles) {
 				player.Pos.X, player.Pos.Y = startX, startY
 				return
 			}
@@ -83,7 +110,7 @@ func (ms *MovementSystem) EnsureValidSpawn(player *types.Player, tm *types.TileM
 			}
 			for _, c := range candidates {
 				cx, cy := c[0], c[1]
-				if ms.isWalkable(tm, cx, cy) {
+				if ms.isWalkableRect(tm, cx, cy, wTiles, hTiles) {
 					player.Pos.X, player.Pos.Y = cx, cy
 					return
 				}
@@ -91,7 +118,7 @@ func (ms *MovementSystem) EnsureValidSpawn(player *types.Player, tm *types.TileM
 		}
 	}
 	// As a last resort, set to (1,1) if walkable; else leave as is
-	if ms.isWalkable(tm, 1, 1) {
+	if ms.isWalkableRect(tm, 1, 1, wTiles, hTiles) {
 		player.Pos.X, player.Pos.Y = 1, 1
 	}
 }
@@ -111,6 +138,7 @@ func (ms *MovementSystem) MovePlayer(player *types.Player, direction rune, tm *t
 	}
 
 	oldX, oldY := player.Pos.X, player.Pos.Y
+	wTiles, hTiles := ms.spriteFootprintTiles(player)
 
 	dx, dy := 0, 0
 	switch direction {
@@ -138,23 +166,24 @@ func (ms *MovementSystem) MovePlayer(player *types.Player, direction rune, tm *t
 
 	if tm != nil {
 		mapW, mapH := tm.Width, tm.Height
-		// Clamp to map bounds (1-based player coords)
-		if targetX < 1 {
-			targetX = 1
+		// Clamp to map bounds accounting for sprite footprint
+		maxX := mapW - wTiles + 1
+		maxY := mapH - hTiles + 1
+		if maxX < 1 {
+			maxX = 1
 		}
-		if targetY < 1 {
-			targetY = 1
+		if maxY < 1 {
+			maxY = 1
 		}
-		if targetX > mapW {
-			targetX = mapW
+		if targetX > maxX {
+			targetX = maxX
 		}
-		if targetY > mapH {
-			targetY = mapH
+		if targetY > maxY {
+			targetY = maxY
 		}
 
-		// Check wall collision at target tile (0-based map indices)
-		ch := tm.At(targetX-1, targetY-1)
-		if config.IsMapWall(ch) {
+		// Check wall collision for the footprint rectangle
+		if !ms.isWalkableRect(tm, targetX, targetY, wTiles, hTiles) {
 			return false
 		}
 	}

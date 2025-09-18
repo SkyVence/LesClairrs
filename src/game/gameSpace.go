@@ -13,10 +13,11 @@ type GameRenderer struct {
 	tileMap *types.TileMap
 	viewX   int // top-left map X of the viewport
 	viewY   int // top-left map Y of the viewport
-	// draw state for current frame
-	scale int // integer scale (>=1); 1 = no scale, >1 = scaled up
-	offX  int // interior offset X when scaled to center
-	offY  int // interior offset Y when scaled to center
+	// inner viewport rectangle (borders will be drawn around this)
+	innerX int // top-left X of viewport border in screen grid
+	innerY int // top-left Y of viewport border in screen grid
+	innerW int // viewport interior width (in cells)
+	innerH int // viewport interior height (in cells)
 }
 
 func NewGameRenderer(width, height int) *GameRenderer {
@@ -31,11 +32,10 @@ func (gr *GameRenderer) RenderGameWorld(player *types.Player) string {
 		return "Screen too small"
 	}
 
-	// Adjust camera based on player and map
-	gr.updateViewport(player)
+	// Compute inner viewport layout and adjust camera
+	gr.computeLayout(player)
 
 	// Initialize draw state and grid
-	gr.scale, gr.offX, gr.offY = 1, 0, 0
 	grid := gr.initializeGrid()
 
 	// Render in organized layers
@@ -71,25 +71,46 @@ func (gr *GameRenderer) renderBackground(grid [][]rune) {
 
 // renderBorders draws the game area borders
 func (gr *GameRenderer) renderBorders(grid [][]rune) {
-	for i := 0; i < gr.height; i++ {
-		if i == 0 || i == gr.height-1 {
-			for j := 0; j < gr.width; j++ {
-				switch {
-				case i == 0 && j == 0:
-					grid[i][j] = '┌'
-				case i == 0 && j == gr.width-1:
-					grid[i][j] = '┐'
-				case i == gr.height-1 && j == 0:
-					grid[i][j] = '└'
-				case i == gr.height-1 && j == gr.width-1:
-					grid[i][j] = '┘'
-				default:
-					grid[i][j] = '─'
-				}
+	if gr.innerW <= 0 || gr.innerH <= 0 {
+		return
+	}
+	left := gr.innerX
+	top := gr.innerY
+	right := gr.innerX + gr.innerW + 1
+	bottom := gr.innerY + gr.innerH + 1
+
+	// Top and bottom
+	for x := left; x <= right; x++ {
+		if top >= 0 && top < gr.height {
+			switch {
+			case x == left:
+				grid[top][x] = '┌'
+			case x == right:
+				grid[top][x] = '┐'
+			default:
+				grid[top][x] = '─'
 			}
-		} else {
-			grid[i][0] = '│'
-			grid[i][gr.width-1] = '│'
+		}
+		if bottom >= 0 && bottom < gr.height {
+			switch {
+			case x == left:
+				grid[bottom][x] = '└'
+			case x == right:
+				grid[bottom][x] = '┘'
+			default:
+				grid[bottom][x] = '─'
+			}
+		}
+	}
+	// Sides
+	for y := top + 1; y < bottom; y++ {
+		if y >= 0 && y < gr.height {
+			if left >= 0 && left < gr.width {
+				grid[y][left] = '│'
+			}
+			if right >= 0 && right < gr.width {
+				grid[y][right] = '│'
+			}
 		}
 	}
 }
@@ -139,77 +160,57 @@ func (gr *GameRenderer) updateViewport(player *types.Player) {
 	gr.viewX, gr.viewY = targetX, targetY
 }
 
+// computeLayout decides whether to center a smaller viewport around the map
+// or use the full available area with scrolling for large maps.
+func (gr *GameRenderer) computeLayout(player *types.Player) {
+	visW := max(1, gr.width-2)
+	visH := max(1, gr.height-2)
+	mapW, mapH := 0, 0
+	if gr.tileMap != nil {
+		mapW, mapH = gr.tileMap.Width, gr.tileMap.Height
+	}
+
+	// Small-map mode: center viewport to match map size and show entire map
+	if mapW > 0 && mapH > 0 && mapW <= visW && mapH <= visH {
+		gr.viewX, gr.viewY = 0, 0
+		gr.innerW, gr.innerH = mapW, mapH
+		totalW := gr.innerW + 2
+		totalH := gr.innerH + 2
+		gr.innerX = (gr.width - totalW) / 2
+		gr.innerY = (gr.height - totalH) / 2
+		if gr.innerX < 0 {
+			gr.innerX = 0
+		}
+		if gr.innerY < 0 {
+			gr.innerY = 0
+		}
+		return
+	}
+
+	// Large-map mode: full-screen interior viewport with scrolling
+	gr.innerX, gr.innerY = 0, 0
+	gr.innerW, gr.innerH = visW, visH
+	gr.updateViewport(player)
+}
+
 // renderMap draws the tile map into the grid, clipped within borders
 func (gr *GameRenderer) renderMap(grid [][]rune) {
 	if gr.tileMap == nil {
 		return
 	}
-	visW := gr.width - 2
-	visH := gr.height - 2
-	mapW := gr.tileMap.Width
-	mapH := gr.tileMap.Height
-
-	if mapW <= 0 || mapH <= 0 {
-		return
-	}
-
-	// Compute uniform integer scale to fit map when smaller than viewport
-	sX := visW / mapW
-	sY := visH / mapH
-	gr.scale = 2
-	if sX > 1 && sY > 1 {
-		if sX < sY {
-			gr.scale = sX
-		} else {
-			gr.scale = sY
-		}
-	}
-
-	if gr.scale == 1 {
-		// No scaling: draw the visible slice via viewport
-		for y := 0; y < visH; y++ {
-			mapY := gr.viewY + y
-			for x := 0; x < visW; x++ {
-				mapX := gr.viewX + x
-				ch := gr.tileMap.At(mapX, mapY)
-				if ch == 0 {
-					ch = ' '
-				}
-				sy, sx := y+1, x+1
-				if sy >= 1 && sy < gr.height-1 && sx >= 1 && sx < gr.width-1 {
-					grid[sy][sx] = ch
-				}
-			}
-		}
-		return
-	}
-
-	// Scaling case: center the scaled map inside the viewport
-	drawW := mapW * gr.scale
-	drawH := mapH * gr.scale
-	gr.offX = (visW - drawW) / 2
-	gr.offY = (visH - drawH) / 2
-
-	for my := 0; my < mapH; my++ {
-		for mx := 0; mx < mapW; mx++ {
-			ch := gr.tileMap.At(mx, my)
+	// Draw visible slice inside inner viewport (no scaling)
+	for y := 0; y < gr.innerH; y++ {
+		mapY := gr.viewY + y
+		for x := 0; x < gr.innerW; x++ {
+			mapX := gr.viewX + x
+			ch := gr.tileMap.At(mapX, mapY)
 			if ch == 0 {
 				ch = ' '
 			}
-			baseY := 1 + gr.offY + my*gr.scale
-			baseX := 1 + gr.offX + mx*gr.scale
-			for dy := 0; dy < gr.scale; dy++ {
-				sy := baseY + dy
-				if sy <= 0 || sy >= gr.height-1 {
-					continue
-				}
-				for dx := 0; dx < gr.scale; dx++ {
-					sx := baseX + dx
-					if sx <= 0 || sx >= gr.width-1 {
-						continue
-					}
-					grid[sy][sx] = ch
-				}
+			sy := gr.innerY + 1 + y
+			sx := gr.innerX + 1 + x
+			if sy >= 0 && sy < gr.height && sx >= 0 && sx < gr.width {
+				grid[sy][sx] = ch
 			}
 		}
 	}
@@ -217,23 +218,17 @@ func (gr *GameRenderer) renderMap(grid [][]rune) {
 
 // renderPlayer draws the player sprite on the grid using viewport offset
 func (gr *GameRenderer) renderPlayer(grid [][]rune, player *types.Player) {
-	spriteLines := strings.Split(player.GetSprite(), "\n")
+	if player == nil {
+		return
+	}
 	playerX, playerY := player.GetPosition()
+	spriteLines := strings.Split(player.GetSprite(), "\n")
 	for i, line := range spriteLines {
-		var y, x int
-		if gr.scale > 1 {
-			y = 1 + gr.offY + (playerY-1)*gr.scale + i
-		} else {
-			y = (playerY - gr.viewY) + i + 1
-		}
-		if y >= 1 && y < gr.height-1 {
+		y := gr.innerY + 1 + (playerY - gr.viewY - 1) + i
+		if y >= 0 && y < gr.height {
 			for j, char := range line {
-				if gr.scale > 1 {
-					x = 1 + gr.offX + (playerX-1)*gr.scale + j
-				} else {
-					x = (playerX - gr.viewX) + j + 1
-				}
-				if x >= 1 && x < gr.width-1 {
+				x := gr.innerX + 1 + (playerX - gr.viewX - 1) + j
+				if x >= 0 && x < gr.width {
 					grid[y][x] = char
 				}
 			}

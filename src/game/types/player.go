@@ -77,7 +77,7 @@ func (p *Player) Move(direction rune, width, height int) {
 			p.Pos.Y--
 		}
 	case '↓':
-		if p.Pos.Y < height-4 { // Account for sprite height and bottom border
+		if p.Pos.Y < height-6 { // Account for sprite height and bottom border
 			p.Pos.Y++
 		}
 	case '←':
@@ -101,8 +101,8 @@ func (p *Player) SetSprite(sprite string) {
 
 // CreateStickManSprite returns a default player sprite
 func CreateStickManSprite() string {
-	return ` o
-/|\
+	return ` o  
+/|\/
 / \`
 }
 
