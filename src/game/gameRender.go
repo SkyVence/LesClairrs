@@ -188,6 +188,8 @@ func (gr *GameRender) handleKeyInput(msg engine.KeyMsg) (engine.Model, engine.Cm
 		return gr.handleMerchantInput(msg)
 	case systems.StateExploration:
 		return gr.handleGameInput(msg)
+	case systems.StateCombat:
+		return gr.handleGameInput(msg)
 
 	default:
 		return gr, nil

@@ -8,6 +8,13 @@ import (
 )
 
 func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
+	// Handle combat input first if we're in combat state
+	if gr.gameState.CurrentState == systems.StateCombat {
+		gr.handleCombatInput(msg)
+		return gr, nil
+	}
+
+	// Handle exploration and other states
 	switch msg.Rune {
 	case '↑', '↓', '←', '→':
 		if gr.gameState.CurrentState == systems.StateExploration {
@@ -16,11 +23,11 @@ func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.C
 			if gr.combatSystem.TryEngageCombat(gr.gameInstance.Player) {
 				gr.gameState.ChangeState(systems.StateCombat)
 			}
-		} else if gr.gameState.CurrentState == systems.StateCombat {
-			gr.handleCombatInput(msg)
 		}
 	case 'm':
-		gr.gameState.ChangeState(systems.StateMerchant)
+		if gr.gameState.CurrentState == systems.StateExploration {
+			gr.gameState.ChangeState(systems.StateMerchant)
+		}
 		return gr, nil
 	case 'p':
 		if gr.gameState.CurrentState == systems.StateExploration {

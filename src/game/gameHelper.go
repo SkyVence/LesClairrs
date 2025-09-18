@@ -46,21 +46,27 @@ func (gr *GameRender) handleSizeUpdate(msg engine.SizeMsg) {
 }
 
 func (gr *GameRender) updateGameSystems() {
-	if gr.gameState.CurrentState != systems.StateExploration {
-		return
+	// Update exploration systems
+	if gr.gameState.CurrentState == systems.StateExploration {
+		// Clean up defeated enemies
+		if gr.spawnerSystem != nil {
+			gr.spawnerSystem.RemoveDefeatedEnemies()
+
+			// Check if stage is cleared
+			if gr.spawnerSystem.IsStageCleared() {
+				// Award clearing reward
+				if gr.gameInstance != nil && gr.gameInstance.Player != nil && gr.gameInstance.CurrentStage != nil {
+					// Add experience or handle stage completion
+					// gr.gameInstance.Player.AddExperience(gr.gameInstance.CurrentStage.ClearingReward)
+				}
+			}
+		}
 	}
 
-	// Clean up defeated enemies
-	if gr.spawnerSystem != nil {
-		gr.spawnerSystem.RemoveDefeatedEnemies()
-
-		// Check if stage is cleared
-		if gr.spawnerSystem.IsStageCleared() {
-			// Award clearing reward
-			if gr.gameInstance != nil && gr.gameInstance.Player != nil && gr.gameInstance.CurrentStage != nil {
-				// Add experience or handle stage completion
-				// gr.gameInstance.Player.AddExperience(gr.gameInstance.CurrentStage.ClearingReward)
-			}
+	// Update combat systems
+	if gr.gameState.CurrentState == systems.StateCombat {
+		if gr.combatSystem != nil && gr.gameInstance != nil && gr.gameInstance.Player != nil {
+			gr.combatSystem.Update(gr.gameInstance.Player)
 		}
 	}
 }

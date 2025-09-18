@@ -18,6 +18,8 @@ type CombatSystem struct {
 	locManager          *engine.LocalizationManager
 	spawnerSystem       *SpawnerSystem
 	combatUI            *ui.CombatUI
+	enemyTurnDelay      int // Frames to wait before processing enemy turn
+	maxEnemyTurnDelay   int // Maximum delay for enemy turns
 }
 
 // NewCombatSystem creates a new combat system instance
@@ -28,6 +30,8 @@ func NewCombatSystem(initialState types.CombatState, locManager *engine.Localiza
 		locManager:          locManager,
 		spawnerSystem:       spawnerSystem,
 		combatUI:            nil, // Will be initialized later when renderer is available
+		enemyTurnDelay:      0,
+		maxEnemyTurnDelay:   60, // Wait ~1 second at 60fps before enemy acts
 	}
 }
 
@@ -39,6 +43,11 @@ func (cs *CombatSystem) SetRenderer(renderer engine.Renderer) {
 func (cs *CombatSystem) ChangeCombatState(newState types.CombatState) {
 	cs.PreviousCombatState = cs.CurrentCombatState
 	cs.CurrentCombatState = newState
+
+	// Reset enemy turn delay when transitioning to enemy turn
+	if newState == types.EnemyTurn {
+		cs.enemyTurnDelay = cs.maxEnemyTurnDelay
+	}
 }
 
 func (cs *CombatSystem) RevertCombatState() {
@@ -99,6 +108,164 @@ func (cs *CombatSystem) AiAttack(e entities.Enemy, p *types.Player) {
 		if cs.combatUI != nil {
 			cs.combatUI.SetTurn(types.PlayerTurn)
 		}
+	}
+}
+
+// AiDefend makes the enemy take a defensive stance
+func (cs *CombatSystem) AiDefend(e *entities.Enemy) {
+	// Enemy gains temporary defense boost
+	e.Defense += 2
+
+	message := fmt.Sprintf("%s takes a defensive stance!", e.Name)
+	if cs.combatUI != nil {
+		cs.combatUI.AddAction(e.Name, "Defend", "", 0, message)
+	}
+
+	cs.ChangeCombatState(types.PlayerTurn)
+	if cs.combatUI != nil {
+		cs.combatUI.SetTurn(types.PlayerTurn)
+	}
+}
+
+// AiSpecialAttack performs a powerful but less accurate attack
+func (cs *CombatSystem) AiSpecialAttack(e *entities.Enemy, p *types.Player) {
+	// Check if special attack hits (70% accuracy)
+	if rand.Intn(100) >= 70 {
+		message := fmt.Sprintf("%s attempts a special attack but misses!", e.Name)
+		if cs.combatUI != nil {
+			cs.combatUI.AddAction(e.Name, "Special Attack", p.Name, 0, message)
+		}
+	} else {
+		// Special attack deals 1.5x damage
+		baseDamage := int(float64(e.Force) * 1.5)
+		damage := baseDamage - p.Stats.Defense
+		if damage < 1 {
+			damage = 1
+		}
+
+		// Apply damage
+		p.Stats.CurrentHP -= damage
+		if p.Stats.CurrentHP < 0 {
+			p.Stats.CurrentHP = 0
+		}
+
+		message := fmt.Sprintf("%s uses special attack on %s for %d damage!", e.Name, p.Name, damage)
+		if cs.combatUI != nil {
+			cs.combatUI.AddAction(e.Name, "Special Attack", p.Name, damage, message)
+		}
+	}
+
+	// Check if player is defeated
+	if cs.IsPlayerDefeated(p) {
+		cs.ChangeCombatState(types.Dead)
+		if cs.combatUI != nil {
+			cs.combatUI.SetTurn(types.Dead)
+			cs.combatUI.AddAction("System", "Result", "", 0, "You have been defeated!")
+		}
+	} else {
+		cs.ChangeCombatState(types.PlayerTurn)
+		if cs.combatUI != nil {
+			cs.combatUI.SetTurn(types.PlayerTurn)
+		}
+	}
+}
+
+// AiHeal makes the enemy restore some health
+func (cs *CombatSystem) AiHeal(e *entities.Enemy) {
+	// Heal 15-25% of max HP
+	healAmount := int(float64(e.MaxHP) * (0.15 + rand.Float64()*0.1))
+	if healAmount < 1 {
+		healAmount = 1
+	}
+
+	e.CurrentHP += healAmount
+	if e.CurrentHP > e.MaxHP {
+		e.CurrentHP = e.MaxHP
+	}
+
+	message := fmt.Sprintf("%s heals for %d HP!", e.Name, healAmount)
+	if cs.combatUI != nil {
+		cs.combatUI.AddAction(e.Name, "Heal", "", healAmount, message)
+	}
+
+	cs.ChangeCombatState(types.PlayerTurn)
+	if cs.combatUI != nil {
+		cs.combatUI.SetTurn(types.PlayerTurn)
+	}
+}
+
+// AiTaunt makes the enemy taunt the player, reducing accuracy
+func (cs *CombatSystem) AiTaunt(e *entities.Enemy, p *types.Player) {
+	// Temporarily reduce player accuracy
+	p.Stats.Accuracy -= 10
+	if p.Stats.Accuracy < 10 {
+		p.Stats.Accuracy = 10
+	}
+
+	message := fmt.Sprintf("%s taunts %s, reducing accuracy!", e.Name, p.Name)
+	if cs.combatUI != nil {
+		cs.combatUI.AddAction(e.Name, "Taunt", p.Name, 0, message)
+	}
+
+	cs.ChangeCombatState(types.PlayerTurn)
+	if cs.combatUI != nil {
+		cs.combatUI.SetTurn(types.PlayerTurn)
+	}
+}
+
+// ProcessEnemyTurn handles the enemy's turn with random action selection
+func (cs *CombatSystem) ProcessEnemyTurn(p *types.Player) {
+	if cs.CurrentEnemy == nil {
+		return
+	}
+
+	enemy := cs.CurrentEnemy
+
+	// Determine available actions based on enemy state and type
+	var availableActions []string
+
+	// Always available actions
+	availableActions = append(availableActions, "attack")
+
+	// Conditional actions
+	if enemy.CurrentHP < enemy.MaxHP/2 {
+		// If enemy is below 50% HP, more likely to heal or defend
+		availableActions = append(availableActions, "heal", "defend")
+	}
+
+	if enemy.Force > 15 {
+		// Stronger enemies can use special attacks
+		availableActions = append(availableActions, "special_attack")
+	}
+
+	if rand.Intn(100) < 20 {
+		// 20% chance to add taunt option
+		availableActions = append(availableActions, "taunt")
+	}
+
+	// Always add defend as a possibility
+	if rand.Intn(100) < 30 {
+		availableActions = append(availableActions, "defend")
+	}
+
+	// Select random action
+	selectedAction := availableActions[rand.Intn(len(availableActions))]
+
+	// Execute the selected action
+	switch selectedAction {
+	case "attack":
+		cs.AiAttack(*enemy, p)
+	case "defend":
+		cs.AiDefend(enemy)
+	case "special_attack":
+		cs.AiSpecialAttack(enemy, p)
+	case "heal":
+		cs.AiHeal(enemy)
+	case "taunt":
+		cs.AiTaunt(enemy, p)
+	default:
+		// Fallback to attack
+		cs.AiAttack(*enemy, p)
 	}
 }
 
@@ -257,7 +424,13 @@ func (cs *CombatSystem) ProcessPlayerAction(action string, p *types.Player) bool
 // Update should be called each frame to handle AI turns and UI updates
 func (cs *CombatSystem) Update(p *types.Player) {
 	if cs.CurrentCombatState == types.EnemyTurn && cs.CurrentEnemy != nil {
-		cs.AiAttack(*cs.CurrentEnemy, p)
+		// Countdown the delay before processing enemy turn
+		if cs.enemyTurnDelay > 0 {
+			cs.enemyTurnDelay--
+		} else {
+			// Process the enemy turn
+			cs.ProcessEnemyTurn(p)
+		}
 	}
 
 	// Update the combat UI display
