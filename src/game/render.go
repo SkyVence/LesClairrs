@@ -230,7 +230,7 @@ func (m *model) createTransitionTitle(nextName string, nameID int, ok bool) stri
 	}
 
 	// Try to get translated name
-	if translatedName := locManager.Text(fmt.Sprintf("game.world" + fmt.Sprint(nameID) + ".name")); translatedName != "" {
+	if translatedName := locManager.Text(fmt.Sprint("%s", "game.world"+fmt.Sprint(nameID)+".name")); translatedName != "" {
 		return "Traveling to: " + translatedName
 	}
 
@@ -286,7 +286,7 @@ func (gr *GameRenderer) renderBackground(grid [][]rune) {
 	// Simple background pattern - can be enhanced later
 	for i := 1; i < gr.height-1; i++ {
 		for j := 1; j < gr.width-1; j++ {
-			grid[i][j] = '▒'
+			grid[i][j] = ' '
 		}
 	}
 }
