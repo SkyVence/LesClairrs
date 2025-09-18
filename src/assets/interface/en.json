@@ -1,0 +1,143 @@
+{
+	"ui": {
+		"menu": {
+			"mainmenu": "Main Menu",
+			"start": "Start Game",
+			"settings": "Settings",
+			"quit": "Quit",
+			"loading": "Loading..."
+		},
+		"hud": {
+			"health": "Health Points",
+			"level": "Level",
+			"experience": "Experience",
+			"Location": "Location: {world} - {stage}",
+			"currency": "Currency: {amount}",
+			"world": "World",
+			"stage": "Stage"
+		},
+		"inventory": {
+			"title": "Inventory",
+			"consumables": "Consumables",
+			"weapons": "Weapons",
+			"implants": "Implants",
+			"close": "Close"
+		},
+		"combat": {
+			"attack": "Attack",
+			"defend": "Defend",
+			"item": "Use Item",
+			"flee": "Flee",
+			"damage": "{attacker} deals {damage} damage to {defender}",
+			"heal": "{healer} heals {amount} health points to {target}",
+			"miss": "{attacker} misses their attack on {defender}",
+			"critical": "Critical hit! {attacker} deals {damage} damage to {defender}"
+		}
+	},
+	"game": {
+		"levels": {
+			"world1": {
+				"name": "MEILAND",
+				"stages": {
+					"1": {
+						"name":"The Pit",
+						"dialogue": {
+							"aethelgard1": "You've got the knack. What are you doing in this hole? You're on my property.",
+							"sam1": "Gngng where are we blabla who are you",
+							"aethelgard2": "We're in MEILAND, you live in a cave, you don't fool me, the best businessman in all of history Aethelgard in flesh and one of the last 100% bone. Once again... what are you doing in MY mine?",
+							"sam2": "I just woke up, I don't have all my thoughts straight.",
+							"aethelgard3":"You've got a sense for partying, and combat in your blood. I'll make you a deal, take a look at my shop, and I'll leave you alone.",
+							"aethelgard4":"I've got weapons, potions, armor, and even stuff I'm not allowed to sell. What do you want? May our paths cross again! In the meantime, get off my lawn."
+						}
+					},
+					"2": {
+						"name":"Downtown",
+						"dialogue": {
+							"foule1":"INVADERS, GET OUT! DICTATORS, TO THE STAKE!",
+							"sam1":"Why are you protesting?",
+							"passant1":"Since the end of the war and the fall of the last governor, we've been starving while the CLAIR use our sweat and blood to fill their bellies and their closets",
+							"sam2":"The CLAIR?",
+							"passant2":"The Committee for Liquidation of Useless Activities and Revolutionary Reforms, they took advantage of the unstable system to seize power. Where do you come from? It's been 15 years since the world stopped making sense!",
+							"general1":"We have authorization to open fire, disperse or face the consequences.",
+							"foule2":"WE'RE DYING OF HUNGER AND DISEASE, WE WON'T LET YOU ALSO TAKE AWAY OUR FREEDOM TO EXPRESS OURSELVES.",
+							"general2":"Unit, in firing position! (pause) Fire!",
+							"valerius1":"Sam! Catch this and put it in your forearm!",
+							"sam3":"Valerius?",
+							"valerius2":"I met Aethelgard on his world tour. He told me about you. When he told me what you were, I didn't waste time finding you.",
+							"sam4":"What I am? How do you know my arm could undergo improvements?",
+							"valerius3":"Your whole body can, you're a PROD, you were designed to protect and serve the people. All your brothers were defeated during the war... except you. You're a cybernetic modification, based on the human body, programmed for missions and combat. Your adaptation system and motor skills are unique and your improvement system fascinating. You should find more improvements in those big guys from CLAIRR. You'd better find them before they find you."
+						}
+					},
+					"3": {
+						"name":"NULL Border",
+						"dialogue": {
+							"general1":"PROD. The war is over, go home and stay hidden, this is no longer your fight",
+							"sam1":"Valerius told me who you are. You're not ordinary soldiers.",
+							"general2":"Aah Valerius, truly skilled with her hands. She also surely told you that she was an engineer for CLAIRR and that all these robots you see in the street as well as all our war machines are designed by her. She is the pioneer of our rise to power. You see, the world was corrupted by lies created by humans like her. We have put the world back on the roads of trust and truth.",
+							"sam2":"By massacring all those who oppose you, like you did today.",
+							"general3":"What you saw today has nothing to do with it, it was just a simple misunderstanding with the civilians, nothing more. They didn't listen, I had warned them. However, I found your performance very humiliating. And humiliating me in public is something that never happens",
+							"sam3":"There's a first time for everything I suppose.",
+							"general4":"SHUT UP! Your arrogance will lead to your downfall. Your journey and your species stops at the foot of this border."
+						}
+					}
+				}
+			},
+			"world2": {
+				"name": "CYBER DISTRICT",
+				"stages": {
+					"1": {
+						"name":"Alpha Sector",
+						"dialogue": {
+							"aethelgard1":"Sam! My favorite customer! So in the mood for shopping? I've got a good deal for you. Have you ever heard of Grimshaw? Obviously not, he travels the galaxies. You're more likely to get crushed by a meteorite than to run into him. But it's your lucky day! He's taking a break in the area for a few months. He's a good guy even if he's very scary at first sight. I guess intergalactic travel doesn't suit him. Anyway, you should find him being mysterious near Valerius's shop a few meters away. Don't miss your chance, see you later buddy!",
+							"sam1":"Grimshaw?",
+							"grimshaw1":"...",
+							"sam2":"Aethelgard sent me, would you have something for me.",
+							"grimshaw2":"Look",
+							"sam3": "And how does it work?",
+							"grimshaw3":"You stick it in your heart and inject. If you want something else I don't have time.",
+							"valerius1":"Hello champion, ready to save the world? I've got what you need in firepower and it's homemade!",
+							"sam4":"You worked for CLAIRR?",
+							"valerius2":"SHHHT! Who told you that?",
+							"sam5":"I had the right to a date with the general.",
+							"valerius3":"Listen, I made bad decisions in my life, but working for CLAIRR wasn't a choice. I worked for the old government 15 years ago. I was Minister of Arms and had my own firearms industry. When the people revolted against the government, CLAIRR arrived and announced they were on the people's side. At that moment, it was CLAIRR and the people against the government. Once they won the war, I was taken prisoner and forced to work for them. Aethelgard, merchant from father to son, bourgeois family, is an old friend. Thanks to a nice check, he was able to buy my freedom without CLAIRR tracking me. In exchange they kept all my weapon plans as well as my factory.",
+							"sam6":"How do Aethelgard and you manage to escape CLAIRR for so long?",
+							"valerius4":"Aethelgard thanks to his inheritance, and me thanks to Grimshaw.",
+							"sam7":"Grimshaw? The traveler?",
+							"valerius5":"He didn't choose to be like that either... listen I'd love to tell you more but you have a system to bring down and a war to end. We'll talk about it once everything is over.",
+							"sam8":"How do you know I'll succeed.",
+							"valerius6":"We know, now go..."
+						}
+					},
+					"2": {
+						"name": "Central Network",
+						"dialogue": {
+							"passant1":"PROD! You're not welcome here.",
+							"sam1":"I'm not your enemy, I'm here to give you back your freedom.",
+							"passant2":"OH what a good samaritan... we've never been freer than thanks to CLAIRR. They heard our prayers and saved us from the grip of evil. Our world will regain its greatness and when MEILAND bends to the rules, nothing and no one will be able to stop us, not even you, relic.",
+							"sam2":"Listen, my mission is not to hurt you, so you're just going to pretend you didn't see me, and we'll all continue our lives peacefully, without scratches.",
+							"passant3":"And betray the word of the almighty CLAIRR Gods? We will spread their words across the galaxies, and eliminate anyone opposing him. Starting with you.",
+							"sam3":"Do you listen to yourself talk? Everything you say makes no sense.",
+							"systeme1":"You denigrate the image of CLAIRR. It is illegal to tarnish the image of the saviors under penalty of death. We have the duty to execute you, please remain calm while we proceed with your execution.",
+							"sam4":"Are you done?",
+							"scientifique1":"To be completely honest, I have a brand new prototype to test.",
+							"sam5":"Who are you again?",
+							"scientifique2":"It doesn't really matter anymore. However, here is VAL 9020.",
+							"sam6":"Valerius?",
+							"sam7":"I'm sorry Valerius...",
+							"grimshaw1":"That wasn't her",
+							"sam8":"Grimshaw? Where is Valerius?",
+							"grimshaw2":"With Aethelgard, they got a head start.",
+							"sam9":"You've been following me from the beginning?",
+							"grimshaw3":"We know all your movements, your mistakes, past, present and future. No time for chatter. Buy yourself something and get back on your way.",
+							"grimshaw4":"Aethelgard and Valerius are waiting for you. Don't dawdle."
+						}
+					}
+				}
+			}
+		},
+		"merchants": {
+			"consumable": "Aethelgard",
+			"weapon": "Valerius"
+		}
+	}
+}
