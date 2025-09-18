@@ -122,27 +122,25 @@ func (ds *DialogSystem) showCurrentEntry(npcPos types.Position) {
 	dialogText := ds.locManager.Text(entry.TextKey, entry.Args...)
 	
 	// Show the dialog box
-	ds.dialogBox.Show(dialogText, speakerText, npcPos)
+	ds.dialogBox.Show(dialogText, speakerText, npcPos.X, npcPos.Y)
 }
 
 // nextEntry advances to the next dialog entry or ends the dialog
 func (ds *DialogSystem) nextEntry() {
-	if ds.currentDialog == nil {
-		return
-	}
+    if ds.currentDialog == nil {
+        return
+    }
 
-	ds.currentDialog.Current++
-	
-	if ds.currentDialog.Current >= len(ds.currentDialog.Entries) {
-		// End of dialog sequence
-		ds.EndDialog()
-	} else {
-		// Show next entry (keep same NPC position)
-		npcPos := ds.dialogBox.GetPosition()
-		npcPos.Y += 5 // Reverse the offset calculation
-		npcPos.X -= 2
-		ds.showCurrentEntry(npcPos)
-	}
+    ds.currentDialog.Current++
+    
+    if ds.currentDialog.Current >= len(ds.currentDialog.Entries) {
+        // End of dialog sequence
+        ds.EndDialog()
+    } else {
+        // Show next entry - use a default position since GetPosition doesn't exist
+        defaultPos := types.Position{X: 2, Y: 5} // Position par défaut
+        ds.showCurrentEntry(defaultPos)
+    }
 }
 
 // CreateSimpleDialog creates a simple dialog sequence with a single entry
