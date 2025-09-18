@@ -15,7 +15,11 @@
 //	class := config.DefaultClasses["CYBER_SAMURAI"]
 package config
 
-import "time"
+import (
+	"time"
+
+	"projectred-rpg.com/game/types"
+)
 
 // Game balance constants
 const (
@@ -46,32 +50,34 @@ type ClassConfig struct {
 }
 
 // Default classes available in the game
-var DefaultClasses = map[string]ClassConfig{
-	"D0C": {
-		Name:        "D0C",
-		Description: "Un robot intelligent, précis et polyvalent.",
-		MaxHP:       90,
-		Force:       10,
-		Speed:       12,
-		Defense:     10,
-		Accuracy:    22,
-	},
-	"APP": {
-		Name:        "APP",
-		Description: "Un robot furtif, rapide et précis.",
-		MaxHP:       80,
-		Force:       14,
-		Speed:       22,
-		Defense:     8,
-		Accuracy:    18,
-	},
-	"CYBER_SAMURAI": {
-		Name:        "Cyber-Samurai",
-		Description: "A swift and deadly warrior, excelling in close combat and agility.",
-		MaxHP:       100,
-		Force:       15,
-		Speed:       12,
-		Defense:     8,
-		Accuracy:    15,
-	},
+func GetDefaultClasses() []types.Class {
+	return []types.Class{
+		{
+			Name:        "ui.class.doc.name",
+			Description: "ui.class.doc.desc",
+			MaxHP:       90,
+			Force:       10,
+			Speed:       12,
+			Defense:     10,
+			Accuracy:    22,
+		},
+		{
+			Name:        "ui.class.app.name",
+			Description: "ui.class.app.desc",
+			MaxHP:       80,
+			Force:       14,
+			Speed:       22,
+			Defense:     8,
+			Accuracy:    18,
+		},
+		{
+			Name:        "ui.class.per.name",
+			Description: "ui.class.per.desc",
+			MaxHP:       100,
+			Force:       15,
+			Speed:       12,
+			Defense:     8,
+			Accuracy:    15,
+		},
+	}
 }

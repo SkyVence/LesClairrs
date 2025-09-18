@@ -12,12 +12,13 @@
 //
 // Example usage:
 //
-//	game := NewGameInstance(selectedClass)
-//	location, worldID := game.CurrentLocation()
-//	success := game.Advance()
+//	gameRender := GameModel()
+//	location, worldID := gameRender.CurrentLocation()
+//	success := gameRender.Advance()
 package game
 
 import (
+	"projectred-rpg.com/engine"
 	"projectred-rpg.com/game/entities"
 	"projectred-rpg.com/game/loaders"
 	"projectred-rpg.com/game/systems"
@@ -170,4 +171,68 @@ func (g *Game) Advance() bool {
 		}
 	}
 	return false
+}
+
+// GameRender methods for accessing game state through the render interface
+
+// CurrentLocation returns the current location information via GameRender.
+func (gr *GameRender) CurrentLocation() (string, int) {
+	if gr.gameInstance == nil {
+		return "", -1
+	}
+	return gr.gameInstance.CurrentLocation()
+}
+
+// PeekNext returns information about the next stage or world via GameRender.
+func (gr *GameRender) PeekNext() (string, int, bool) {
+	if gr.gameInstance == nil {
+		return "", -1, false
+	}
+	return gr.gameInstance.PeekNext()
+}
+
+// Advance moves the game to the next stage via GameRender.
+func (gr *GameRender) Advance() bool {
+	if gr.gameInstance == nil {
+		return false
+	}
+	return gr.gameInstance.Advance()
+}
+
+// GetGameState returns the current game state.
+func (gr *GameRender) GetGameState() systems.GameState {
+	if gr.gameState == nil {
+		return systems.GameState{}
+	}
+	return *gr.gameState
+}
+
+// GetPlayer returns the current player instance.
+func (gr *GameRender) GetPlayer() *types.Player {
+	if gr.gameInstance == nil {
+		return nil
+	}
+	return gr.gameInstance.Player
+}
+
+// GetCurrentWorld returns the current world.
+func (gr *GameRender) GetCurrentWorld() *types.World {
+	if gr.gameInstance == nil {
+		return nil
+	}
+	return gr.gameInstance.CurrentWorld
+}
+
+// GetCurrentStage returns the current stage.
+func (gr *GameRender) GetCurrentStage() *types.Stage {
+	if gr.gameInstance == nil {
+		return nil
+	}
+	return gr.gameInstance.CurrentStage
+}
+
+// Main entry point function that creates and returns the GameRender model
+// This replaces any previous main initialization and should be called by the engine
+func InitGame() engine.Model {
+	return GameModel()
 }
