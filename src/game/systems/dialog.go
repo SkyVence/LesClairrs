@@ -8,9 +8,9 @@ import (
 
 // DialogEntry represents a single dialog entry with localization key and speaker
 type DialogEntry struct {
-	SpeakerKey string   // Localization key for speaker name
-	TextKey    string   // Localization key for dialog text
-	Args       []any    // Arguments for text formatting
+	SpeakerKey string // Localization key for speaker name
+	TextKey    string // Localization key for dialog text
+	Args       []any  // Arguments for text formatting
 }
 
 // DialogSequence represents a sequence of dialog entries
@@ -57,7 +57,7 @@ func (ds *DialogSystem) EndDialog() {
 	ds.isActive = false
 	ds.currentDialog = nil
 	ds.dialogBox.Hide()
-	
+
 	if ds.onComplete != nil {
 		ds.onComplete()
 		ds.onComplete = nil
@@ -112,15 +112,15 @@ func (ds *DialogSystem) showCurrentEntry(npcPos types.Position) {
 	}
 
 	entry := ds.currentDialog.Entries[ds.currentDialog.Current]
-	
+
 	// Get localized text
 	speakerText := ""
 	if entry.SpeakerKey != "" {
 		speakerText = ds.locManager.Text(entry.SpeakerKey)
 	}
-	
+
 	dialogText := ds.locManager.Text(entry.TextKey, entry.Args...)
-	
+
 	// Show the dialog box
 	ds.dialogBox.Show(dialogText, speakerText, npcPos)
 }
@@ -132,7 +132,7 @@ func (ds *DialogSystem) nextEntry() {
 	}
 
 	ds.currentDialog.Current++
-	
+
 	if ds.currentDialog.Current >= len(ds.currentDialog.Entries) {
 		// End of dialog sequence
 		ds.EndDialog()
