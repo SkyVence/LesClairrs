@@ -165,6 +165,10 @@ func (chud *CombatHUD) Update(enemy *entities.Enemy) {
 	chud.currentEnemy = enemy
 }
 
+func (chud *CombatHUD) UpdatePlayer(p *types.Player) {
+	chud.player = p
+}
+
 // UpdateCombatState updates the current combat state
 func (chud *CombatHUD) UpdateCombatState(state types.CombatState, enemy *entities.Enemy) {
 	chud.currentState = state

@@ -78,11 +78,12 @@ func GameModel() *GameRender {
 	merchantMenu := InitializeMerchantMenu(locManager)
 
 	// Initialize Game Systems
-	gameInstance := initializeGameInstance() // Pass current language
+	gameInstance := initializeGameInstance()
 	gameState := systems.NewGameState(systems.StateMainMenu)
 	movement := systems.NewMovementSystem()
 	spawner := systems.NewSpawnerSystem()
 	combatSystem := systems.NewCombatSystem(types.Idle, locManager, spawner)
+	combatHud := ui.NewCombatHUD(80, 24, gameInstance.Player, locManager)
 
 	return &GameRender{
 		gameInstance:  gameInstance,
@@ -94,6 +95,7 @@ func GameModel() *GameRender {
 
 		mainMenu:       menu,
 		hud:            hud,
+		combatHud:      combatHud,
 		settingsMenu:   settingsMenu,
 		classSelection: classSelection,
 		merchantMenu:   merchantMenu,
@@ -137,6 +139,10 @@ func (gr *GameRender) renderGameView() string {
 }
 
 func (gr *GameRender) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
+
+	gr.updateGameSystems()
+
+	// Update UI components based on message type
 	switch msg := msg.(type) {
 	case engine.SizeMsg:
 		gr.handleSizeUpdate(msg)
@@ -212,6 +218,8 @@ func (gr *GameRender) View() string {
 		return gr.renderGameView()
 	case systems.StateSettings:
 		return gr.settingsMenu.View()
+	case systems.StateCombat:
+		return gr.combatHud.Render()
 	case systems.StateMerchant:
 		return gr.merchantMenu.View()
 	default:
