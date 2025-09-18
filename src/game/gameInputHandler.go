@@ -4,6 +4,7 @@ import (
 	"projectred-rpg.com/config"
 	"projectred-rpg.com/engine"
 	"projectred-rpg.com/game/systems"
+	"projectred-rpg.com/game/types"
 )
 
 func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
@@ -16,6 +17,8 @@ func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.C
 			if gr.combatSystem.TryEngageCombat(gr.gameInstance.Player) {
 				gr.gameState.ChangeState(systems.StateCombat)
 			}
+		} else if gr.gameState.CurrentState == systems.StateCombat {
+			gr.handleCombatInput(msg)
 		}
 	case 'm':
 		gr.gameState.ChangeState(systems.StateMerchant)
@@ -126,4 +129,34 @@ func (gr *GameRender) handleSettingsSelectionInput(msg engine.KeyMsg) (engine.Mo
 		gr.settingsMenu, _ = gr.settingsMenu.Update(msg)
 	}
 	return gr, nil
+}
+
+// handleCombatInput handles input during combat state
+func (gr *GameRender) handleCombatInput(msg engine.KeyMsg) {
+	if gr.combatSystem.CurrentCombatState != types.PlayerTurn {
+		return // Only handle input during player turn
+	}
+	
+	combatUI := gr.combatSystem.GetCombatUI()
+	
+	switch msg.Rune {
+	case '↑':
+		combatUI.SelectPrevAction()
+	case '↓':
+		combatUI.SelectNextAction()
+	case '\r', '\n', ' ': // Enter or Space - confirm action
+		action := combatUI.GetSelectedAction()
+		if action != "" {
+			success := gr.combatSystem.ProcessPlayerAction(action, gr.gameInstance.Player)
+			if action == "Run" && success {
+				// Successfully ran away, return to exploration
+				gr.gameState.ChangeState(systems.StateExploration)
+			}
+		}
+	case 'h', 'H': // Toggle history
+		combatUI.ToggleHistory()
+	case 'q', 'Q': // Force quit combat (emergency exit)
+		gr.combatSystem.ExitCombat()
+		gr.gameState.ChangeState(systems.StateExploration)
+	}
 }

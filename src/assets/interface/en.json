@@ -41,12 +41,7 @@
 			"damage": "{attacker} deals {damage} damage to {defender}",
 			"heal": "{healer} heals {amount} health points to {target}",
 			"miss": "{attacker} misses their attack on {defender}",
-			"critical": "Critical hit! {attacker} deals {damage} damage to {defender}",
-			"your_turn": "Your Turn",
-			"enemy_turn": "Enemy Turn",
-			"victory": "Victory!",
-			"defeat": "Defeat!",
-			"combat_started": "Combat has begun!"
+			"critical": "Critical hit! {attacker} deals {damage} damage to {defender}"
 		},
 		"class": {
 			"menuname": "Class Selection",

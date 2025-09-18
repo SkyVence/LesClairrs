@@ -1,35 +1,9 @@
-// Package ui provides user interface components for the game
-//
-// CombatHUD Usage Example:
-//
-//	// Initialize the combat HUD
-//	combatHUD := ui.NewCombatHUD(80, 24, player, locManager)
-//
-//	// Update combat state when entering combat
-//	combatHUD.UpdateCombatState(types.PlayerTurn, enemy)
-//
-//	// In your game loop, handle input and render
-//	action, handled := combatHUD.HandleInput(keyPress)
-//	if handled && action != nil {
-//		switch action.Type {
-//		case 0: // Attack
-//			combatSystem.PlayerAttack(enemy, player)
-//		case 1: // Defend
-//			combatSystem.ChangeCombatState(types.Defending)
-//		case 2: // Item
-//			// Handle item usage
-//		case 3: // Flee
-//			combatSystem.ChangeCombatState(types.OutOfCombat)
-//		}
-//	}
-//
-//	// Render the HUD
-//	hudDisplay := combatHUD.Render()
 package ui
 
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"projectred-rpg.com/engine"
@@ -37,410 +11,474 @@ import (
 	"projectred-rpg.com/game/types"
 )
 
-// CombatState interface defines the methods needed from the combat system
-type CombatState interface {
-	IsInCombat() bool
-	GetCurrentCombatState() types.CombatState
-	GetCurrentEnemy() *entities.Enemy
+// CombatAction represents a single action in combat history
+type CombatAction struct {
+	Timestamp  time.Time
+	Actor      string // "Player" or enemy name
+	ActionType string // "Attack", "Defend", "Use Item", "Special"
+	Target     string // Target of the action
+	Damage     int    // Damage dealt, 0 if not applicable
+	Message    string // Formatted message for display
 }
 
-// CombatHUD represents the heads-up display during combat
-type CombatHUD struct {
-	width      int
-	height     int
-	termWidth  int
-	termHeight int
+// CombatHistory manages the history of combat actions
+type CombatHistory struct {
+	Actions    []CombatAction
+	MaxActions int // Maximum number of actions to keep
+}
 
+// CombatUI represents the full-screen turn-based combat interface
+type CombatUI struct {
+	width          int
+	height         int
+	termWidth      int
+	termHeight     int
+	renderer       engine.Renderer
+	locManager     *engine.LocalizationManager
+	
 	// Combat state
-	combatState    CombatState
-	currentState   types.CombatState
 	player         *types.Player
-	currentEnemy   *entities.Enemy
-	combatLog      []string
-	maxLogEntries  int
-	selectedAction int // 0: Attack, 1: Defend, 2: Item, 3: Flee
-
-	// UI State
-	locManager *engine.LocalizationManager
-	styles     CombatHUDStyles
+	enemy          *entities.Enemy
+	currentTurn    types.CombatState
+	history        *CombatHistory
+	
+	// UI state
+	selectedAction int
+	availableActions []string
+	showHistory    bool
+	
+	// Styles
+	styles         CombatUIStyles
 }
 
-// CombatHUDStyles contains styling for the combat HUD
-type CombatHUDStyles struct {
+// CombatUIStyles contains all styling for the combat interface
+type CombatUIStyles struct {
 	Container      lipgloss.Style
-	TurnIndicator  lipgloss.Style
 	PlayerPanel    lipgloss.Style
 	EnemyPanel     lipgloss.Style
+	HistoryPanel   lipgloss.Style
+	ActionPanel    lipgloss.Style
 	HealthBar      lipgloss.Style
-	HealthBarLow   lipgloss.Style
-	ActionButton   lipgloss.Style
 	SelectedAction lipgloss.Style
-	CombatLog      lipgloss.Style
-	LogEntry       lipgloss.Style
-	Border         lipgloss.Style
+	NormalAction   lipgloss.Style
+	Title          lipgloss.Style
 	Text           lipgloss.Style
+	Border         lipgloss.Style
+	Warning        lipgloss.Style
+	Success        lipgloss.Style
+	Damage         lipgloss.Style
 }
 
-// NewCombatHUD creates a new combat HUD instance
-func NewCombatHUD(width, height int, player *types.Player, locManager *engine.LocalizationManager) *CombatHUD {
-	return &CombatHUD{
-		width:          width,
-		height:         height,
-		currentState:   types.OutOfCombat,
-		player:         player,
-		combatLog:      make([]string, 0),
-		maxLogEntries:  5,
-		selectedAction: 0,
-		locManager:     locManager,
-		styles:         DefaultCombatHUDStyles(),
+// NewCombatHistory creates a new combat history tracker
+func NewCombatHistory(maxActions int) *CombatHistory {
+	return &CombatHistory{
+		Actions:    make([]CombatAction, 0, maxActions),
+		MaxActions: maxActions,
 	}
 }
 
-// DefaultCombatHUDStyles returns the default combat HUD styling
-func DefaultCombatHUDStyles() CombatHUDStyles {
-	return CombatHUDStyles{
+// AddAction adds a new action to the combat history
+func (ch *CombatHistory) AddAction(action CombatAction) {
+	ch.Actions = append(ch.Actions, action)
+	
+	// Remove oldest actions if we exceed the maximum
+	if len(ch.Actions) > ch.MaxActions {
+		ch.Actions = ch.Actions[1:]
+	}
+}
+
+// GetRecentActions returns the most recent actions (up to count)
+func (ch *CombatHistory) GetRecentActions(count int) []CombatAction {
+	if count >= len(ch.Actions) {
+		return ch.Actions
+	}
+	return ch.Actions[len(ch.Actions)-count:]
+}
+
+// Clear removes all actions from history
+func (ch *CombatHistory) Clear() {
+	ch.Actions = ch.Actions[:0]
+}
+
+// NewCombatUI creates a new combat UI instance
+func NewCombatUI(renderer engine.Renderer, locManager *engine.LocalizationManager) *CombatUI {
+	width, height := renderer.GetSize()
+	
+	return &CombatUI{
+		width:          width,
+		height:         height,
+		termWidth:      width,
+		termHeight:     height,
+		renderer:       renderer,
+		locManager:     locManager,
+		history:        NewCombatHistory(50), // Keep last 50 actions
+		selectedAction: 0,
+		availableActions: []string{"Attack", "Defend", "Use Item", "Run"},
+		showHistory:    false,
+		styles:         DefaultCombatUIStyles(),
+	}
+}
+
+// DefaultCombatUIStyles returns the default combat UI styling
+func DefaultCombatUIStyles() CombatUIStyles {
+	return CombatUIStyles{
 		Container: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("#7D56F4")).
-			Padding(1, 2),
-		TurnIndicator: lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("#FFD700")).
-			Align(lipgloss.Center).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#FFD700")).
-			Padding(0, 1),
+			Padding(1),
 		PlayerPanel: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#00FF00")).
-			Padding(0, 1).
-			Width(25),
+			BorderForeground(lipgloss.Color("#4ECDC4")).
+			Padding(1).
+			Width(30),
 		EnemyPanel: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#FF0000")).
-			Padding(0, 1).
-			Width(25),
+			BorderForeground(lipgloss.Color("#FF6B6B")).
+			Padding(1).
+			Width(30),
+		HistoryPanel: lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#FFA726")).
+			Padding(1),
+		ActionPanel: lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#66BB6A")).
+			Padding(1),
 		HealthBar: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#00FF00")).
+			Foreground(lipgloss.Color("#FF6B6B")).
 			Bold(true),
-		HealthBarLow: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FF0000")).
-			Bold(true),
-		ActionButton: lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#808080")).
-			Padding(0, 1).
-			Margin(0, 1),
 		SelectedAction: lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#FFD700")).
-			Background(lipgloss.Color("#333333")).
-			Padding(0, 1).
-			Margin(0, 1).
-			Bold(true),
-		CombatLog: lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#888888")).
-			Height(8).
-			Width(50).
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Background(lipgloss.Color("#7D56F4")).
+			Bold(true).
 			Padding(0, 1),
-		LogEntry: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#CCCCCC")),
+		NormalAction: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#7D56F4")).
+			Padding(0, 1),
+		Title: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FFD700")).
+			Bold(true).
+			Align(lipgloss.Center),
+		Text: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FFFFFF")),
 		Border: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("#7D56F4")),
-		Text: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF")),
+		Warning: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FF6B6B")).
+			Bold(true),
+		Success: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#4ECDC4")).
+			Bold(true),
+		Damage: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FF4444")).
+			Bold(true),
 	}
 }
 
-// UpdateSize updates the HUD dimensions
-func (chud *CombatHUD) UpdateSize(width, height int) {
-	chud.termWidth = width
-	chud.termHeight = height
+// UpdateSize updates the UI dimensions when terminal is resized
+func (cui *CombatUI) UpdateSize() {
+	cui.termWidth, cui.termHeight = cui.renderer.GetSize()
+	cui.width = cui.termWidth
+	cui.height = cui.termHeight
 }
 
-// Update updates the combat HUD state
-func (chud *CombatHUD) Update(enemy *entities.Enemy) {
-	chud.currentEnemy = enemy
+// SetCombatants sets the player and enemy for the combat
+func (cui *CombatUI) SetCombatants(player *types.Player, enemy *entities.Enemy) {
+	cui.player = player
+	cui.enemy = enemy
+	cui.history.Clear()
+	cui.selectedAction = 0
 }
 
-func (chud *CombatHUD) UpdatePlayer(p *types.Player) {
-	chud.player = p
+// SetTurn updates the current turn state
+func (cui *CombatUI) SetTurn(turn types.CombatState) {
+	cui.currentTurn = turn
 }
 
-// UpdateCombatState updates the current combat state
-func (chud *CombatHUD) UpdateCombatState(state types.CombatState, enemy *entities.Enemy) {
-	chud.currentState = state
-	chud.currentEnemy = enemy
+// ToggleHistory toggles the visibility of the combat history
+func (cui *CombatUI) ToggleHistory() {
+	cui.showHistory = !cui.showHistory
 }
 
-// IsInCombat returns whether currently in combat
-func (chud *CombatHUD) IsInCombat() bool {
-	return chud.currentState != types.OutOfCombat && chud.currentState != types.Dead
+// SelectNextAction moves to the next available action
+func (cui *CombatUI) SelectNextAction() {
+	cui.selectedAction = (cui.selectedAction + 1) % len(cui.availableActions)
 }
 
-// AddLogEntry adds a new entry to the combat log
-func (chud *CombatHUD) AddLogEntry(message string) {
-	chud.combatLog = append(chud.combatLog, message)
-	if len(chud.combatLog) > chud.maxLogEntries {
-		chud.combatLog = chud.combatLog[1:]
-	}
-}
-
-// ClearLog clears the combat log
-func (chud *CombatHUD) ClearLog() {
-	chud.combatLog = make([]string, 0)
-}
-
-// SetSelectedAction sets the currently selected action
-func (chud *CombatHUD) SetSelectedAction(action int) {
-	if action >= 0 && action <= 3 {
-		chud.selectedAction = action
+// SelectPrevAction moves to the previous available action
+func (cui *CombatUI) SelectPrevAction() {
+	cui.selectedAction--
+	if cui.selectedAction < 0 {
+		cui.selectedAction = len(cui.availableActions) - 1
 	}
 }
 
 // GetSelectedAction returns the currently selected action
-func (chud *CombatHUD) GetSelectedAction() int {
-	return chud.selectedAction
+func (cui *CombatUI) GetSelectedAction() string {
+	if cui.selectedAction >= 0 && cui.selectedAction < len(cui.availableActions) {
+		return cui.availableActions[cui.selectedAction]
+	}
+	return ""
 }
 
-// NavigateActions handles navigation between action buttons
-func (chud *CombatHUD) NavigateActions(direction rune) {
-	switch direction {
-	case '←', 'a':
-		if chud.selectedAction > 0 {
-			chud.selectedAction--
-		}
-	case '→', 'd':
-		if chud.selectedAction < 3 {
-			chud.selectedAction++
-		}
+// AddAction adds an action to the combat history
+func (cui *CombatUI) AddAction(actor, actionType, target string, damage int, message string) {
+	action := CombatAction{
+		Timestamp:  time.Now(),
+		Actor:      actor,
+		ActionType: actionType,
+		Target:     target,
+		Damage:     damage,
+		Message:    message,
 	}
-}
-
-// renderTurnIndicator renders the turn indicator
-func (chud *CombatHUD) renderTurnIndicator() string {
-	var turnText string
-	switch chud.currentState {
-	case types.PlayerTurn:
-		turnText = chud.locManager.Text("your_turn")
-	case types.EnemyTurn:
-		turnText = chud.locManager.Text("enemy_turn")
-	case types.Victory:
-		turnText = chud.locManager.Text("victory")
-	case types.Dead:
-		turnText = chud.locManager.Text("defeat")
-	default:
-		turnText = chud.locManager.Text("combat")
-	}
-
-	return chud.styles.TurnIndicator.Render(turnText)
-}
-
-// renderPlayerPanel renders the player information panel
-func (chud *CombatHUD) renderPlayerPanel() string {
-	if chud.player == nil {
-		return chud.styles.PlayerPanel.Render("Player: N/A")
-	}
-
-	healthPercent := float64(chud.player.Stats.CurrentHP) / float64(chud.player.Stats.MaxHP)
-	healthStyle := chud.styles.HealthBar
-	if healthPercent < 0.3 {
-		healthStyle = chud.styles.HealthBarLow
-	}
-
-	healthBar := chud.renderHealthBar(chud.player.Stats.CurrentHP, chud.player.Stats.MaxHP, 20)
-
-	content := fmt.Sprintf("%s\nLv.%d\n%s\nHP: %s",
-		chud.player.Name,
-		chud.player.Stats.Level,
-		healthStyle.Render(healthBar),
-		healthStyle.Render(fmt.Sprintf("%d/%d", chud.player.Stats.CurrentHP, chud.player.Stats.MaxHP)))
-
-	return chud.styles.PlayerPanel.Render(content)
-}
-
-// renderEnemyPanel renders the enemy information panel
-func (chud *CombatHUD) renderEnemyPanel() string {
-	if chud.currentEnemy == nil {
-		return chud.styles.EnemyPanel.Render("Enemy: N/A")
-	}
-
-	healthPercent := float64(chud.currentEnemy.CurrentHP) / float64(chud.currentEnemy.MaxHP)
-	healthStyle := chud.styles.HealthBar
-	if healthPercent < 0.3 {
-		healthStyle = chud.styles.HealthBarLow
-	}
-
-	healthBar := chud.renderHealthBar(chud.currentEnemy.CurrentHP, chud.currentEnemy.MaxHP, 20)
-
-	content := fmt.Sprintf("%s\n%s\nHP: %s",
-		chud.currentEnemy.Name,
-		healthStyle.Render(healthBar),
-		healthStyle.Render(fmt.Sprintf("%d/%d", chud.currentEnemy.CurrentHP, chud.currentEnemy.MaxHP)))
-
-	return chud.styles.EnemyPanel.Render(content)
+	cui.history.AddAction(action)
 }
 
 // renderHealthBar creates a visual health bar
-func (chud *CombatHUD) renderHealthBar(current, max, width int) string {
+func (cui *CombatUI) renderHealthBar(current, max int, width int) string {
 	if max <= 0 {
-		return strings.Repeat("░", width)
-	}
-
-	filled := int(float64(current) / float64(max) * float64(width))
-	if filled < 0 {
-		filled = 0
-	}
-	if filled > width {
-		filled = width
-	}
-
-	return strings.Repeat("█", filled) + strings.Repeat("░", width-filled)
-}
-
-// renderActionButtons renders the combat action buttons
-func (chud *CombatHUD) renderActionButtons() string {
-	actions := []string{
-		chud.locManager.Text("attack"),
-		chud.locManager.Text("defend"),
-		chud.locManager.Text("item"),
-		chud.locManager.Text("flee"),
-	}
-
-	var buttons []string
-	for i, action := range actions {
-		style := chud.styles.ActionButton
-		if i == chud.selectedAction {
-			style = chud.styles.SelectedAction
-		}
-		buttons = append(buttons, style.Render(action))
-	}
-
-	return lipgloss.JoinHorizontal(lipgloss.Top, buttons...)
-}
-
-// renderCombatLog renders the combat log
-func (chud *CombatHUD) renderCombatLog() string {
-	if len(chud.combatLog) == 0 {
-		return chud.styles.CombatLog.Render(chud.locManager.Text("combat_started"))
-	}
-
-	var logLines []string
-	for _, entry := range chud.combatLog {
-		logLines = append(logLines, chud.styles.LogEntry.Render(entry))
-	}
-
-	// Pad with empty lines if needed
-	for len(logLines) < chud.maxLogEntries {
-		logLines = append(logLines, "")
-	}
-
-	content := strings.Join(logLines, "\n")
-	return chud.styles.CombatLog.Render(content)
-}
-
-// Render renders the complete combat HUD
-func (chud *CombatHUD) Render() string {
-	if !chud.IsInCombat() {
 		return ""
 	}
-
-	// Top section: Turn indicator
-	turnIndicator := chud.renderTurnIndicator()
-
-	// Middle section: Player and Enemy panels side by side
-	playerPanel := chud.renderPlayerPanel()
-	enemyPanel := chud.renderEnemyPanel()
-	combatInfo := lipgloss.JoinHorizontal(lipgloss.Top, playerPanel, "  ", enemyPanel)
-
-	// Action buttons (only show during player turn)
-	var actionSection string
-	if chud.currentState == types.PlayerTurn {
-		actionButtons := chud.renderActionButtons()
-		actionSection = lipgloss.JoinVertical(lipgloss.Left,
-			chud.styles.Text.Render("Choose your action:"),
-			actionButtons)
+	
+	percentage := float64(current) / float64(max)
+	if percentage < 0 {
+		percentage = 0
 	}
-
-	// Combat log
-	combatLog := chud.renderCombatLog()
-
-	// Combine all sections
-	var sections []string
-	sections = append(sections, turnIndicator)
-	sections = append(sections, combatInfo)
-	if actionSection != "" {
-		sections = append(sections, actionSection)
+	if percentage > 1 {
+		percentage = 1
 	}
-	sections = append(sections, combatLog)
-
-	content := lipgloss.JoinVertical(lipgloss.Center, sections...)
-	return chud.styles.Container.Render(content)
+	
+	filledWidth := int(float64(width) * percentage)
+	emptyWidth := width - filledWidth
+	
+	filled := strings.Repeat("█", filledWidth)
+	empty := strings.Repeat("░", emptyWidth)
+	
+	var color lipgloss.Color
+	if percentage > 0.6 {
+		color = lipgloss.Color("#4ECDC4") // Green
+	} else if percentage > 0.3 {
+		color = lipgloss.Color("#FFA726") // Orange
+	} else {
+		color = lipgloss.Color("#FF6B6B") // Red
+	}
+	
+	bar := lipgloss.NewStyle().Foreground(color).Render(filled) + 
+		  lipgloss.NewStyle().Foreground(lipgloss.Color("#333333")).Render(empty)
+	
+	return fmt.Sprintf("%s %d/%d", bar, current, max)
 }
 
-// HandleInput processes input during combat and returns the selected action
-func (chud *CombatHUD) HandleInput(key rune) (*CombatAction, bool) {
-	if !chud.IsInCombat() {
-		return nil, false
+// renderPlayerPanel creates the player information panel
+func (cui *CombatUI) renderPlayerPanel() string {
+	if cui.player == nil {
+		return cui.styles.PlayerPanel.Render("No Player Data")
 	}
+	
+	content := fmt.Sprintf("%s\n", cui.styles.Title.Render(cui.player.Name))
+	content += fmt.Sprintf("Level: %d\n", cui.player.Stats.Level)
+	content += fmt.Sprintf("HP: %s\n", 
+		cui.renderHealthBar(cui.player.Stats.CurrentHP, cui.player.Stats.MaxHP, 20))
+	content += fmt.Sprintf("ATK: %d\n", cui.player.Stats.Force)
+	content += fmt.Sprintf("DEF: %d\n", cui.player.Stats.Defense)
+	content += fmt.Sprintf("SPD: %d\n", cui.player.Stats.Speed)
+	content += fmt.Sprintf("ACC: %d", cui.player.Stats.Accuracy)
+	
+	return cui.styles.PlayerPanel.Render(content)
+}
 
-	switch chud.currentState {
-	case types.PlayerTurn:
-		switch key {
-		case '←', 'a', '→', 'd':
-			chud.NavigateActions(key)
-			return nil, true
-		case '\r', ' ': // Enter or Space
-			return chud.executeSelectedAction()
-		case '1':
-			chud.SetSelectedAction(0)
-			return chud.executeSelectedAction()
-		case '2':
-			chud.SetSelectedAction(1)
-			return chud.executeSelectedAction()
-		case '3':
-			chud.SetSelectedAction(2)
-			return chud.executeSelectedAction()
-		case '4':
-			chud.SetSelectedAction(3)
-			return chud.executeSelectedAction()
+// renderEnemyPanel creates the enemy information panel
+func (cui *CombatUI) renderEnemyPanel() string {
+	if cui.enemy == nil {
+		return cui.styles.EnemyPanel.Render("No Enemy Data")
+	}
+	
+	content := fmt.Sprintf("%s\n", cui.styles.Title.Render(cui.enemy.Name))
+	content += fmt.Sprintf("HP: %s\n", 
+		cui.renderHealthBar(cui.enemy.CurrentHP, cui.enemy.MaxHP, 20))
+	content += fmt.Sprintf("ATK: %d\n", cui.enemy.Force)
+	content += fmt.Sprintf("DEF: %d\n", cui.enemy.Defense)
+	content += fmt.Sprintf("SPD: %d\n", cui.enemy.Speed)
+	content += fmt.Sprintf("ACC: %d", cui.enemy.Accuracy)
+	
+	return cui.styles.EnemyPanel.Render(content)
+}
+
+// renderActionPanel creates the action selection panel
+func (cui *CombatUI) renderActionPanel() string {
+	if cui.currentTurn != types.PlayerTurn {
+		var turnText string
+		switch cui.currentTurn {
+		case types.EnemyTurn:
+			turnText = "Enemy Turn - Waiting..."
+		case types.Victory:
+			turnText = cui.styles.Success.Render("Victory!")
+		case types.Dead:
+			turnText = cui.styles.Warning.Render("Defeat!")
+		default:
+			turnText = "Processing..."
+		}
+		return cui.styles.ActionPanel.Render(turnText)
+	}
+	
+	content := cui.styles.Title.Render("Choose Action") + "\n\n"
+	
+	for i, action := range cui.availableActions {
+		if i == cui.selectedAction {
+			content += cui.styles.SelectedAction.Render(fmt.Sprintf("> %s", action)) + "\n"
+		} else {
+			content += cui.styles.NormalAction.Render(fmt.Sprintf("  %s", action)) + "\n"
 		}
 	}
-
-	return nil, false
+	
+	content += "\n" + cui.styles.Text.Render("Use ↑↓ to select, Enter to confirm")
+	content += "\n" + cui.styles.Text.Render("Press H to toggle history")
+	
+	return cui.styles.ActionPanel.Render(content)
 }
 
-// CombatAction represents an action that can be taken in combat
-type CombatAction struct {
-	Type   int    // 0: Attack, 1: Defend, 2: Item, 3: Flee
-	Target string // Target of the action if applicable
+// renderHistoryPanel creates the combat history panel
+func (cui *CombatUI) renderHistoryPanel(maxLines int) string {
+	if !cui.showHistory {
+		return ""
+	}
+	
+	content := cui.styles.Title.Render("Combat History") + "\n\n"
+	
+	recentActions := cui.history.GetRecentActions(maxLines - 2)
+	if len(recentActions) == 0 {
+		content += cui.styles.Text.Render("No actions yet...")
+	} else {
+		for _, action := range recentActions {
+			timeStr := action.Timestamp.Format("15:04:05")
+			line := fmt.Sprintf("[%s] %s", timeStr, action.Message)
+			if action.Damage > 0 {
+				line = cui.styles.Damage.Render(line)
+			} else {
+				line = cui.styles.Text.Render(line)
+			}
+			content += line + "\n"
+		}
+	}
+	
+	return cui.styles.HistoryPanel.Render(content)
 }
 
-// executeSelectedAction returns the action to be executed
-func (chud *CombatHUD) executeSelectedAction() (*CombatAction, bool) {
-	if chud.currentEnemy == nil || chud.player == nil {
-		return nil, false
+// Render creates the complete combat UI
+func (cui *CombatUI) Render() string {
+	cui.UpdateSize()
+	
+	// Calculate available space
+	minWidth := 80  // Minimum width for proper display
+	minHeight := 20 // Minimum height for proper display
+	
+	if cui.termWidth < minWidth || cui.termHeight < minHeight {
+		// Small screen mode - simplified layout
+		return cui.renderSmallScreen()
 	}
+	
+	// Full screen mode
+	return cui.renderFullScreen()
+}
 
-	action := &CombatAction{Type: chud.selectedAction}
-
-	switch chud.selectedAction {
-	case 0: // Attack
-		chud.AddLogEntry(fmt.Sprintf("%s attacks %s!", chud.player.Name, chud.currentEnemy.Name))
-		return action, true
-	case 1: // Defend
-		chud.AddLogEntry(fmt.Sprintf("%s takes a defensive stance.", chud.player.Name))
-		return action, true
-	case 2: // Item
-		chud.AddLogEntry(fmt.Sprintf("%s searches for an item...", chud.player.Name))
-		// TODO: Implement item selection and usage
-		return action, true
-	case 3: // Flee
-		chud.AddLogEntry(fmt.Sprintf("%s attempts to flee!", chud.player.Name))
-		return action, true
+// renderSmallScreen renders a simplified layout for small terminals
+func (cui *CombatUI) renderSmallScreen() string {
+	content := cui.styles.Title.Render("COMBAT") + "\n\n"
+	
+	// Player stats (compact)
+	if cui.player != nil {
+		content += fmt.Sprintf("You: %s (HP: %d/%d)\n", 
+			cui.player.Name, cui.player.Stats.CurrentHP, cui.player.Stats.MaxHP)
 	}
+	
+	// Enemy stats (compact)
+	if cui.enemy != nil {
+		content += fmt.Sprintf("Enemy: %s (HP: %d/%d)\n\n", 
+			cui.enemy.Name, cui.enemy.CurrentHP, cui.enemy.MaxHP)
+	}
+	
+	// Recent history (last 3 actions)
+	recentActions := cui.history.GetRecentActions(3)
+	for _, action := range recentActions {
+		content += fmt.Sprintf("• %s\n", action.Message)
+	}
+	
+	content += "\n"
+	
+	// Actions
+	if cui.currentTurn == types.PlayerTurn {
+		content += "Actions:\n"
+		for i, action := range cui.availableActions {
+			if i == cui.selectedAction {
+				content += fmt.Sprintf("> %s\n", action)
+			} else {
+				content += fmt.Sprintf("  %s\n", action)
+			}
+		}
+	} else {
+		content += "Enemy turn...\n"
+	}
+	
+	return cui.styles.Container.Render(content)
+}
 
-	return nil, false
+// renderFullScreen renders the full layout for larger terminals
+func (cui *CombatUI) renderFullScreen() string {
+	// Top section: Player and Enemy panels side by side
+	topSection := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		cui.renderPlayerPanel(),
+		strings.Repeat(" ", 4), // Spacer
+		cui.renderEnemyPanel(),
+	)
+	
+	// Calculate remaining space for middle section
+	historyHeight := cui.termHeight - 15 // Reserve space for top and bottom sections
+	if historyHeight < 5 {
+		historyHeight = 5
+	}
+	
+	// Middle section: History (if shown) or spacer
+	var middleSection string
+	if cui.showHistory {
+		middleSection = cui.renderHistoryPanel(historyHeight)
+	} else {
+		// Show a simplified recent action summary
+		recentActions := cui.history.GetRecentActions(3)
+		content := cui.styles.Title.Render("Recent Actions") + "\n\n"
+		for _, action := range recentActions {
+			content += cui.styles.Text.Render("• " + action.Message) + "\n"
+		}
+		if len(recentActions) == 0 {
+			content += cui.styles.Text.Render("No actions yet...")
+		}
+		middleSection = cui.styles.HistoryPanel.Render(content)
+	}
+	
+	// Bottom section: Action panel
+	bottomSection := cui.renderActionPanel()
+	
+	// Combine all sections
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		topSection,
+		"\n",
+		middleSection,
+		"\n",
+		bottomSection,
+	)
+}
+
+// Clear clears the screen and positions cursor at top
+func (cui *CombatUI) Clear() {
+	cui.renderer.ClearScreen()
+	cui.renderer.SetCursor(0, 0)
+}
+
+// Display renders and displays the combat UI
+func (cui *CombatUI) Display() {
+	cui.Clear()
+	content := cui.Render()
+	cui.renderer.Write(content)
 }

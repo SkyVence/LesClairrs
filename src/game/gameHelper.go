@@ -4,7 +4,6 @@ import (
 	"projectred-rpg.com/config"
 	"projectred-rpg.com/engine"
 	"projectred-rpg.com/game/systems"
-	"projectred-rpg.com/game/types"
 )
 
 func (gr *GameRender) refreshMenusAfterLanguageChange() {
@@ -39,11 +38,6 @@ func (gr *GameRender) handleSizeUpdate(msg engine.SizeMsg) {
 	gr.settingsMenu, _ = gr.settingsMenu.Update(msg)
 	gr.merchantMenu, _ = gr.merchantMenu.Update(msg)
 	*gr.hud, _ = gr.hud.Update(msg)
-
-	// Update combat HUD if it exists
-	if gr.combatHud != nil {
-		gr.combatHud.UpdateSize(msg.Width, msg.Height)
-	}
 
 	// Update game space if it exists
 	if gr.gameSpace != nil {
@@ -97,10 +91,6 @@ func (gr *GameRender) updateHUDStats() {
 }
 
 func (gr *GameRender) updateCombatHUD() {
-	if gr.combatHud == nil || gr.gameInstance == nil || gr.gameInstance.Player == nil {
-		return
-	}
-
-	gr.combatHud.UpdatePlayer(gr.gameInstance.Player)
-	gr.combatHud.UpdateCombatState(types.PlayerTurn, gr.combatSystem.GetCurrentEnemy())
+	// Combat UI is now handled directly by the combat system
+	// No need for separate update - the combat system manages its own UI
 }

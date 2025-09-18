@@ -25,7 +25,6 @@ type GameRender struct {
 	classSelection ui.ClassMenu
 	settingsMenu   ui.SettingsMenu
 	merchantMenu   ui.MerchantMenu
-	combatHud      *ui.CombatHUD
 
 	// Screen/Renderer Settings
 	screenWidth  int
@@ -87,7 +86,6 @@ func GameModel() *GameRender {
 	movement := systems.NewMovementSystem()
 	spawner := systems.NewSpawnerSystem()
 	combatSystem := systems.NewCombatSystem(types.Idle, locManager, spawner)
-	combatHud := ui.NewCombatHUD(80, 24, gameInstance.Player, locManager)
 
 	return &GameRender{
 		gameInstance:  gameInstance,
@@ -99,7 +97,6 @@ func GameModel() *GameRender {
 
 		mainMenu:       menu,
 		hud:            hud,
-		combatHud:      combatHud,
 		settingsMenu:   settingsMenu,
 		classSelection: classSelection,
 		merchantMenu:   merchantMenu,
@@ -210,6 +207,11 @@ func (gr *GameRender) handleLevelIntroInput(msg engine.KeyMsg) (engine.Model, en
 }
 
 func (m *GameRender) Init() engine.Msg {
+	// Initialize the combat UI renderer
+	renderer := engine.GetGlobalRenderer()
+	if renderer != nil {
+		m.SetRenderer(renderer)
+	}
 	return nil
 }
 
@@ -235,10 +237,18 @@ func (gr *GameRender) View() string {
 	case systems.StateSettings:
 		return gr.settingsMenu.View()
 	case systems.StateCombat:
-		return gr.combatHud.Render()
+		if gr.combatSystem.GetCombatUI() != nil {
+			return gr.combatSystem.GetCombatUI().Render()
+		}
+		return "Combat UI not initialized"
 	case systems.StateMerchant:
 		return gr.merchantMenu.View()
 	default:
 		return "Unknown State"
 	}
+}
+
+// SetRenderer initializes the combat UI with the provided renderer
+func (gr *GameRender) SetRenderer(renderer engine.Renderer) {
+	gr.combatSystem.SetRenderer(renderer)
 }

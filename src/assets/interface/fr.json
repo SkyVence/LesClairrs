@@ -41,12 +41,7 @@
 			"damage": "{attacker} inflige {damage} points de dégâts à {defender}",
 			"heal": "{healer} soigne {amount} points de vie à {target}",
 			"miss": "{attacker} rate son attaque sur {defender}",
-			"critical": "Coup critique ! {attacker} inflige {damage} points de dégâts à {defender}",
-			"your_turn": "Votre Tour",
-			"enemy_turn": "Tour Ennemi",
-			"victory": "Victoire !",
-			"defeat": "Défaite !",
-			"combat_started": "Le combat a commencé !"
+			"critical": "Coup critique ! {attacker} inflige {damage} points de dégâts à {defender}"
 		},
 		"class":{
 			"menu": {

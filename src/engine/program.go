@@ -46,6 +46,11 @@ func (p *Program) GetSize() (int, int) {
 	return width, height
 }
 
+// GetRenderer returns the renderer instance
+func (p *Program) GetRenderer() Renderer {
+	return p.renderer
+}
+
 func NewProgram(model Model, opts ...ProgramOption) *Program {
 	p := &Program{
 		Model:    model,
@@ -71,6 +76,9 @@ func (p *Program) Run() error {
 
 	p.renderer.Start()
 	defer p.renderer.Stop()
+
+	// Set the global renderer for access by game systems
+	SetGlobalRenderer(p.renderer)
 
 	if p.useAltScreen {
 		p.renderer.EnterAltScreen()
