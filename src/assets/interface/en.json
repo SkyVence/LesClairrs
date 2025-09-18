@@ -109,6 +109,28 @@
 				"attack3": "GRENADE!",
 				"attack4": "Implosive Vortex"
 			}
+		},
+		"consumable": {
+			"small_medkit": {
+				"name": "Small Medkit",
+				"description": "Heals 20 health points"
+			},
+			"large_medkit": {
+				"name": "Large Medkit",
+				"description": "Heals 50 health points"
+			},
+			"money": {
+				"name": "M0N3¥",
+				"description": "doubles your money gain on next combat"
+			},
+			"serum": {
+				"name": "S3RUM",
+				"description": "doubles your exp gain on next combat"
+			},
+			"flash": {
+				"name": "Flash",
+				"description": "skip enemy's next turn"
+			}
 		}
 	},
 	"game": {

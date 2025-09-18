@@ -36,7 +36,6 @@ type BonusStats struct {
 
 type Implant struct {
 	Type        BodyParts
-	Rarity      Rarity
 	Bonus       BonusStats
 	Name        string
 	Description string

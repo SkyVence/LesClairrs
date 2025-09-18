@@ -108,6 +108,28 @@
 				"attack3":"GRENADE!",
 				"attack4":"Vortex Implosif"
 			}
+		},
+		"consumable":{
+			"small_medkit":{
+				"name":"Petit Medkit",
+				"description":"Soigne 20 points de vie"
+			},
+			"large_medkit":{
+				"name":"Grand Medkit",
+				"description":"Soigne 50 points de vie"
+			},
+			"money":{
+				"name":"M0N3¥",
+				"description":"double ton gain d'argent sur le prochain combat"
+			},
+			"serum":{
+				"name":"S3RUM",
+				"description":"double ton gain d'exp sur le prochain combat"
+			},
+			"flash":{
+				"name":"Flash",
+				"description":"skip le prochain tour de l'énemi"
+			}
 		}
 	},
 "game": {
