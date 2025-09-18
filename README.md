@@ -159,3 +159,6 @@ This project is open source. See LICENSE file for details.
 ---
 
 **Développé en Go** | **Interface Terminal Moderne** | **Architecture Modulaire**
+
+--- 
+Documentation AI Generated from source files. Read Actual source code from better information
