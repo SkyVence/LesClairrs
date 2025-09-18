@@ -23,6 +23,7 @@ type GameRender struct {
 	classSelection ui.ClassMenu
 	hud            *ui.HUD
 	settingsMenu   ui.SettingsMenu
+	merchantMenu   ui.MerchantMenu
 
 	// Screen/Renderer Settings
 	screenWidth  int
@@ -89,6 +90,112 @@ func InitializeSettingsSelection(locManager *engine.LocalizationManager, languag
 	return menu
 }
 
+func InitializeMerchantMenu(locManager *engine.LocalizationManager) ui.MerchantMenu {
+	menuOptions := []ui.MerchantMenuOption{
+		// === WEAPONS SECTION ===
+		{
+			Item: types.Item{
+				Name:        "═══ WEAPONS ═══",
+				Description: "",
+				Type:        types.Weapon,
+			},
+			Price: 0, 
+		},
+		{
+			Item: types.Item{
+				Name:        "ui.weapons.katana.name",
+				Description: "ui.weapons.katana.description",
+				Type:        types.Weapon,
+			},
+			Price: 150,
+		},
+		{
+			Item: types.Item{
+				Name:        "ui.weapons.faux neuralink.name",
+				Description: "ui.weapons.faux neuralink.description",
+				Type:        types.Weapon,
+			},
+			Price: 200,
+		},
+		{
+			Item: types.Item{
+				Name:        "ui.weapons.arc synaptique.name",
+				Description: "ui.weapons.arc synaptique.description",
+				Type:        types.Weapon,
+			},
+			Price: 175,
+		},
+		{
+			Item: types.Item{
+				Name:        "ui.weapons.sniper.name",
+				Description: "ui.weapons.sniper.description",
+				Type:        types.Weapon,
+			},
+			Price: 250,
+		},
+		{
+			Item: types.Item{
+				Name:        "ui.weapons.neon reaver.name",
+				Description: "ui.weapons.neon reaver.description",
+				Type:        types.Weapon,
+			},
+			Price: 300,
+		},
+		{
+			Item: types.Item{
+				Name:        "═══ CONSUMABLE ═══",
+				Description: "",
+				Type:        types.Consumable,
+			},
+			Price: 0,
+		},
+		{
+			Item: types.Item{
+				Name:        "ui.consumable.small_medkit.name",
+				Description: "ui.consumable.small_medkit.description",
+				Type:        types.Consumable,
+			},
+			Price: 25,
+		},
+		{
+			Item: types.Item{
+				Name:        "ui.consumable.large_medkit.name",
+				Description: "ui.consumable.large_medkit.description",
+				Type:        types.Consumable,
+			},
+			Price: 50,
+		},
+		{
+			Item: types.Item{
+				Name:        "ui.consumable.money.name",
+				Description: "ui.consumable.money.description",
+				Type:        types.Consumable,
+			},
+			Price: 75,
+		},
+		{
+			Item: types.Item{
+				Name:        "ui.consumable.serum.name",
+				Description: "ui.consumable.serum.description",
+				Type:        types.Consumable,
+			},
+			Price: 100,
+		},
+		{
+			Item: types.Item{
+				Name:        "ui.consumable.flash.name",
+				Description: "ui.consumable.flash.description",
+				Type:        types.Consumable,
+			},
+			Price: 80,
+		},
+	}
+
+	merchantName := locManager.Text("game.merchants.weapon")
+	menu := ui.NewMerchantMenu(merchantName, menuOptions, locManager)
+	return menu
+}
+
 func initializeGameInstance() *Game {
 	// Define default player class - could be moved to config
 	defaultClass := types.Class{
@@ -122,6 +229,7 @@ func GameModel() *GameRender {
 		supportedLanguages = []string{"fr"} // Fallback to French
 	}
 	settingsMenu := InitializeSettingsSelection(locManager, supportedLanguages)
+	merchantMenu := InitializeMerchantMenu(locManager)
 
 	// Initialize Game Systems
 	gameInstance := initializeGameInstance()
@@ -141,6 +249,7 @@ func GameModel() *GameRender {
 		hud:            hud,
 		settingsMenu:   settingsMenu,
 		classSelection: classSelection,
+		merchantMenu:   merchantMenu,
 
 		screenWidth:  80,
 		screenHeight: 24,
@@ -253,6 +362,7 @@ func (gr *GameRender) handleSizeUpdate(msg engine.SizeMsg) {
 	gr.mainMenu, _ = gr.mainMenu.Update(msg)
 	gr.classSelection, _ = gr.classSelection.Update(msg)
 	gr.settingsMenu, _ = gr.settingsMenu.Update(msg)
+	gr.merchantMenu, _ = gr.merchantMenu.Update(msg)
 	*gr.hud, _ = gr.hud.Update(msg)
 
 	// Update game space if it exists
@@ -273,6 +383,9 @@ func (gr *GameRender) handleKeyInput(msg engine.KeyMsg) (engine.Model, engine.Cm
 
 	case systems.StateSettings:
 		return gr.handleSettingsSelectionInput(msg)
+
+	case systems.StateMerchant:
+		return gr.handleMerchantInput(msg)
 
 	case systems.StateExploration:
 		return gr.handleGameInput(msg)
@@ -299,6 +412,9 @@ func (gr *GameRender) refreshMenusAfterLanguageChange() {
 	}
 	gr.settingsMenu = InitializeSettingsSelection(locManager, supportedLanguages)
 	gr.settingsMenu, _ = gr.settingsMenu.Update(sizeMsg)
+
+	gr.merchantMenu = InitializeMerchantMenu(locManager)
+	gr.merchantMenu, _ = gr.merchantMenu.Update(sizeMsg)
 }
 
 func (gr *GameRender) handleSettingsSelectionInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
@@ -335,8 +451,25 @@ func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.C
 				gr.gameState.ChangeState(systems.StateCombat)
 			}
 		}
+	case 'm':
+		gr.gameState.ChangeState(systems.StateMerchant)
+		gr.merchantMenu, _ = gr.merchantMenu.Update(engine.SizeMsg{Width: gr.screenWidth, Height: gr.screenHeight})
+		return gr, nil
 	}
 
+	return gr, nil
+}
+
+func (gr *GameRender) handleMerchantInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
+	switch msg.Rune {
+	case '\r', '\n', ' ':
+		return gr, nil
+	case 'q':
+		gr.gameState.ChangeState(systems.StateExploration)
+		return gr, nil
+	default:
+		gr.merchantMenu, _ = gr.merchantMenu.Update(msg)
+	}
 	return gr, nil
 }
 
@@ -421,6 +554,8 @@ func (gr *GameRender) View() string {
 		return gr.renderGameView()
 	case systems.StateSettings:
 		return gr.settingsMenu.View()
+	case systems.StateMerchant:
+		return gr.merchantMenu.View()
 	default:
 		return "Unknown State"
 	}

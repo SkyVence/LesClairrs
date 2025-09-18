@@ -10,14 +10,6 @@ const (
 	Legs
 )
 
-type Rarity int
-
-const (
-	Tier1 Rarity = iota
-	Tier2
-	Tier3
-)
-
 type ItemType int
 
 const (
@@ -25,6 +17,8 @@ const (
 	Utility
 	Consumable
 	Boost
+	Weapon
+	Armor
 )
 
 type CombatState int

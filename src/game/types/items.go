@@ -2,12 +2,12 @@ package types
 
 type Item struct {
 	Type        ItemType
-	Rarity      Rarity
 	Name        string
 	Description string
 }
 
-type Weapon struct {
+// Renomme Weapon en WeaponData pour éviter le conflit
+type WeaponData struct {
 	KeyName string
 	Type    int
 	Attacks []Attack
