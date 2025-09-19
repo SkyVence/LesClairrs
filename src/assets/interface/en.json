@@ -24,7 +24,20 @@
 			"Location": "Location: {world} - {stage}",
 			"currency": "Currency: {amount}",
 			"world": "World",
-			"stage": "Stage"
+			"stage": "Stage",
+			"history": {
+				"title": "Action History",
+				"no_actions": "No actions available."
+			},
+			"actions": {
+				"prompt": "Available Actions:",
+				"attack": "Attack",
+				"defend": "Defend",
+				"use_item": "Use Item",
+				"run": "Run",
+				"navigate": "Move (Arrows), Enter to Select",
+				"quit": "q"
+			}
 		},
 		"inventory": {
 			"title": "Inventory",
