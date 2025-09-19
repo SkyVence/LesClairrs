@@ -242,24 +242,13 @@ func (cs *CombatSystem) ProcessEnemyTurn(p *types.Player) {
 	// Always available actions
 	availableActions = append(availableActions, "attack")
 
-	// Conditional actions
-	if enemy.CurrentHP < enemy.MaxHP/2 {
-		// If enemy is below 50% HP, more likely to heal or defend
-		availableActions = append(availableActions, "heal", "defend")
-	}
-
-	if enemy.Force > 15 {
+	if enemy.Force > 40 {
 		// Stronger enemies can use special attacks
 		availableActions = append(availableActions, "special_attack")
 	}
 
-	if rand.Intn(100) < 20 {
-		// 20% chance to add taunt option
-		availableActions = append(availableActions, "taunt")
-	}
-
 	// Always add defend as a possibility
-	if rand.Intn(100) < 30 {
+	if rand.Intn(100) < 20 {
 		availableActions = append(availableActions, "defend")
 	}
 

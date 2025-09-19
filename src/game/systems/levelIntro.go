@@ -61,68 +61,53 @@ func (lis *LevelIntroSystem) ShowIntro(levelFilename string, screenWidth, screen
 	levelName := strings.TrimSuffix(levelFilename, ".map")
 	parts := strings.Split(levelName, "_")
 
-	fmt.Printf("DEBUG: levelFilename = %s\n", levelFilename)
-	fmt.Printf("DEBUG: levelName = %s\n", levelName)
-	fmt.Printf("DEBUG: parts = %v\n", parts)
 
 	if len(parts) != 2 {
-		fmt.Printf("DEBUG: parts length is not 2, got %d\n", len(parts))
 		return false
 	}
 
 	worldPart := strings.Replace(parts[0], "world-", "world", 1)
 	stagePart := strings.Replace(parts[1], "stage-", "", 1)
 
-	fmt.Printf("DEBUG: worldPart = %s\n", worldPart)
-	fmt.Printf("DEBUG: stagePart = %s\n", stagePart)
 
 	// Navigate through the JSON structure
 	game, ok := lis.localization["game"].(map[string]interface{})
 	if !ok {
-		fmt.Printf("DEBUG: 'game' not found in localization\n")
 		return false
 	}
 
 	levels, ok := game["levels"].(map[string]interface{})
 	if !ok {
-		fmt.Printf("DEBUG: 'levels' not found in game\n")
 		return false
 	}
 
 	world, ok := levels[worldPart].(map[string]interface{})
 	if !ok {
-		fmt.Printf("DEBUG: world '%s' not found in levels\n", worldPart)
 		return false
 	}
 
 	stages, ok := world["stages"].(map[string]interface{})
 	if !ok {
-		fmt.Printf("DEBUG: 'stages' not found in world\n")
 		return false
 	}
 
 	stage, ok := stages[stagePart].(map[string]interface{})
 	if !ok {
-		fmt.Printf("DEBUG: stage '%s' not found in stages\n", stagePart)
 		return false
 	}
 
 	dialogue, ok := stage["dialogue"].(map[string]interface{})
 	if !ok {
-		fmt.Printf("DEBUG: 'dialogue' not found in stage\n")
 		return false
 	}
 
-	fmt.Printf("DEBUG: Found dialogue with %d entries\n", len(dialogue))
 
 	// Convert dialogue to DialogLine array
 	lis.currentDialogs = lis.convertDialogueToLines(dialogue)
 	if len(lis.currentDialogs) == 0 {
-		fmt.Printf("DEBUG: No dialogs converted\n")
 		return false
 	}
 
-	fmt.Printf("DEBUG: Converted %d dialogues, starting intro\n", len(lis.currentDialogs))
 
 	lis.onComplete = onComplete
 	lis.isActive = true
@@ -130,7 +115,6 @@ func (lis *LevelIntroSystem) ShowIntro(levelFilename string, screenWidth, screen
 
 	// Show first dialog
 	firstDialog := lis.currentDialogs[0]
-	fmt.Printf("DEBUG: First dialog: %s says: %s\n", firstDialog.Speaker, firstDialog.Message)
 	lis.dialogBox.ShowCentered(firstDialog.Message, firstDialog.Speaker, screenWidth, screenHeight)
 
 	return true

@@ -319,6 +319,12 @@ func (gr *GameRenderer) renderMap(grid [][]rune) {
 				ch = ' '
 			}
 
+			// Check if this position is in an active transition zone
+			if gr.tileMap.TransitionZone != nil && gr.tileMap.TransitionZone.Active &&
+				gr.tileMap.TransitionZone.IsInZone(mapX, mapY) {
+				ch = '◊' // Special character for transition zone
+			}
+
 			// Skip rendering outer walls (first/last row/column of the map)
 			// but keep them in the map data for collision detection
 			if gr.isOuterWall(mapX, mapY) {

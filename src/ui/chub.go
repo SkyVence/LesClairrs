@@ -280,13 +280,13 @@ func (cui *CombatHud) ActionMenu() string {
 		return cui.Styles.Text.Render(turnText)
 	}
 
-	content := cui.Styles.Text.Render(cui.LocManager.Text("ui.hud.actions.prompt") + "\n")
+	content := cui.Styles.Text.Render(cui.LocManager.Text("ui.hud.actions.prompt") + "\n\n")
 
 	for i, action := range cui.AvailableActions {
 		if i == cui.SelectedAction {
 			content += cui.Styles.SelectedAction.Render("> "+cui.LocManager.Text("ui.hud.actions."+strings.ToLower(strings.ReplaceAll(action, " ", "_")))) + "\n"
 		} else {
-			content += cui.Styles.UnselectedAction.Render("  "+cui.LocManager.Text("ui.hud.actions."+strings.ToLower(strings.ReplaceAll(action, " ", "_")))) + "\n"
+			content += cui.Styles.UnselectedAction.Render(" "+cui.LocManager.Text("ui.hud.actions."+strings.ToLower(strings.ReplaceAll(action, " ", "_")))) + "\n"
 		}
 	}
 

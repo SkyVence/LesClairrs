@@ -24,7 +24,20 @@
 			"Location": "Lieu: {world} - {stage}",
 			"currency": "Monnaie: {amount}",
 			"world": "Monde",
-			"stage": "Étape"
+			"stage": "Étape",
+			"history": {
+				"title": "Historique des Actions",
+				"no_actions": "Aucune action disponible."
+			},
+			"actions": {
+				"prompt": "Actions Disponibles:",
+				"attack": "Attaquer",
+				"defend": "Défendre",
+				"use_item": "Utiliser un objet",
+				"run": "Fuir",
+				"navigate": "Déplacer (Flèches), Entrée pour Sélectionner",
+				"quit": "q"
+			}
 		},
 		"inventory": {
 			"title": "Inventaire",

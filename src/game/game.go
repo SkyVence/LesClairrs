@@ -18,6 +18,7 @@ package game
 
 import (
 	"fmt"
+
 	"projectred-rpg.com/engine"
 	"projectred-rpg.com/game/entities"
 	"projectred-rpg.com/game/loaders"
@@ -38,12 +39,12 @@ type Game struct {
 
 	// Game systems - modular components handling specific game logic
 	//Combat    *systems.CombatSystem    // Handles damage calculations and battle mechanics
-	Inventory   *systems.InventorySystem // Manages item operations and equipment
-	Movement    *systems.MovementSystem  // Processes player movement and collision detection
-	LevelIntro  *systems.LevelIntroSystem // Handles level introduction dialogues
-	
+	Inventory  *systems.InventorySystem  // Manages item operations and equipment
+	Movement   *systems.MovementSystem   // Processes player movement and collision detection
+	LevelIntro *systems.LevelIntroSystem // Handles level introduction dialogues
+
 	// Game state
-	language    string
+	language     string
 	pendingStage *types.Stage // Stage to load after intro completes
 }
 
@@ -68,24 +69,20 @@ type Game struct {
 func NewGameInstance(selectedClass types.Class, language string) *Game {
 	world := NewWorld(1)
 	player := entities.NewPlayer("Sam", selectedClass, types.Position{X: 1, Y: 1})
-	
-	fmt.Printf("DEBUG: Creating LevelIntroSystem with language: %s\n", language)
-	
+
 	// Create level intro system
 	levelIntro := systems.NewLevelIntroSystem(language)
 	if err := levelIntro.LoadLocalization(); err != nil {
-		fmt.Printf("DEBUG: Error loading localization: %v\n", err)
-	} else {
-		fmt.Printf("DEBUG: Localization loaded successfully\n")
+		panic(fmt.Sprintf("Failed to load localization for language '%s': %v", language, err))
 	}
-	
+
 	return &Game{
 		Player:       player,
 		CurrentWorld: world,
 		CurrentStage: &world.Stages[0],
 		Inventory:    systems.NewInventorySystem(),
 		Movement:     systems.NewMovementSystem(),
-		LevelIntro:   levelIntro,  // AJOUTEZ CETTE LIGNE
+		LevelIntro:   levelIntro, // AJOUTEZ CETTE LIGNE
 		language:     language,
 	}
 }
@@ -140,64 +137,55 @@ func (g *Game) CurrentLocation() (string, int) {
 
 // LoadStage loads a stage with optional introduction
 func (g *Game) LoadStage(worldID, stageID int) {
-    fmt.Printf("DEBUG: LoadStage called with worldID=%d, stageID=%d\n", worldID, stageID)
-    
-    // Create filename in the format your system expects
-    filename := fmt.Sprintf("world-%d_stage-%d.map", worldID, stageID)
-    fmt.Printf("DEBUG: Generated filename: %s\n", filename)
-    
-    // Find the target stage
-    var targetStage *types.Stage
-    if g.CurrentWorld != nil && g.CurrentWorld.WorldID == worldID {
-        // Same world, find stage
-        for i, stage := range g.CurrentWorld.Stages {
-            if stage.StageNb == stageID {
-                targetStage = &g.CurrentWorld.Stages[i]
-                break
-            }
-        }
-    } else {
-        // Different world, load it first
-        g.CurrentWorld = NewWorld(worldID)
-        if len(g.CurrentWorld.Stages) > stageID-1 {
-            targetStage = &g.CurrentWorld.Stages[stageID-1]
-        }
-    }
-    
-    if targetStage == nil {
-        fmt.Printf("DEBUG: targetStage is nil, returning\n")
-        return // Stage not found
-    }
-    
-    fmt.Printf("DEBUG: Found target stage: %s\n", targetStage.Name)
-    
-    // Try to show intro
-    fmt.Printf("DEBUG: Calling LevelIntro.ShowIntro\n")
-    if g.LevelIntro.ShowIntro(filename, 80, 24, func() {
-        fmt.Printf("DEBUG: Intro complete callback called\n")
-        // Callback when intro is complete - actually load the stage
-        g.actuallyLoadStage(targetStage)
-    }) {
-        fmt.Printf("DEBUG: ShowIntro returned true, intro found\n")
-        // Intro found, store the stage to load after intro
-        g.pendingStage = targetStage
-    } else {
-        fmt.Printf("DEBUG: ShowIntro returned false, no intro found\n")
-        // No intro, load stage directly
-        g.actuallyLoadStage(targetStage)
-    }
+
+	// Create filename in the format your system expects
+	filename := fmt.Sprintf("world-%d_stage-%d.map", worldID, stageID)
+
+	// Find the target stage
+	var targetStage *types.Stage
+	if g.CurrentWorld != nil && g.CurrentWorld.WorldID == worldID {
+		// Same world, find stage
+		for i, stage := range g.CurrentWorld.Stages {
+			if stage.StageNb == stageID {
+				targetStage = &g.CurrentWorld.Stages[i]
+				break
+			}
+		}
+	} else {
+		// Different world, load it first
+		g.CurrentWorld = NewWorld(worldID)
+		if len(g.CurrentWorld.Stages) > stageID-1 {
+			targetStage = &g.CurrentWorld.Stages[stageID-1]
+		}
+	}
+
+	if targetStage == nil {
+		return // Stage not found
+	}
+
+	// Try to show intro
+	if g.LevelIntro.ShowIntro(filename, 80, 24, func() {
+		// Callback when intro is complete - actually load the stage
+		g.actuallyLoadStage(targetStage)
+	}) {
+		// Intro found, store the stage to load after intro
+		g.pendingStage = targetStage
+	} else {
+		// No intro, load stage directly
+		g.actuallyLoadStage(targetStage)
+	}
 }
 
 // actuallyLoadStage performs the actual stage loading
 func (g *Game) actuallyLoadStage(stage *types.Stage) {
-    g.CurrentStage = stage
-    g.pendingStage = nil
-    // Add any other stage loading logic here
+	g.CurrentStage = stage
+	g.pendingStage = nil
+	// Add any other stage loading logic here
 }
 
 // IsShowingIntro returns whether an intro is currently being shown
 func (g *Game) IsShowingIntro() bool {
-    return g.LevelIntro != nil && g.LevelIntro.IsActive()
+	return g.LevelIntro != nil && g.LevelIntro.IsActive()
 }
 
 // GameRender methods for accessing game state through the render interface

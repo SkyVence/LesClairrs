@@ -56,9 +56,20 @@ func (gr *GameRender) updateGameSystems() {
 		if gr.spawnerSystem != nil {
 			gr.spawnerSystem.RemoveDefeatedEnemies()
 
+			// Check if stage is cleared and activate transition zone
 			if gr.spawnerSystem.IsStageCleared() {
-				if gr.gameInstance != nil && gr.gameInstance.Player != nil && gr.gameInstance.CurrentStage != nil {
+				if gr.currentMap != nil {
+					gr.currentMap.ActivateTransitionZone()
+				}
 
+				// Check if player is in transition zone
+				if gr.gameInstance != nil && gr.gameInstance.Player != nil && gr.currentMap != nil {
+					playerX := gr.gameInstance.Player.Pos.X
+					playerY := gr.gameInstance.Player.Pos.Y
+
+					if gr.currentMap.IsInTransitionZone(playerX, playerY) {
+						gr.gameState.ChangeState(systems.StateStageTransition)
+					}
 				}
 			}
 		}

@@ -1,6 +1,7 @@
 package game
 
 import (
+	"strings"
 	"time"
 
 	"projectred-rpg.com/config"
@@ -156,6 +157,57 @@ func (gr *GameRender) renderGameView() string {
 	return gr.hud.RenderWithContent(gameContent)
 }
 
+// renderStageTransition renders the stage transition screen
+func (gr *GameRender) renderStageTransition() string {
+	var message string
+
+	if gr.gameInstance != nil && gr.gameInstance.CurrentWorld != nil && gr.gameInstance.CurrentStage != nil {
+		currentStageNb := gr.gameInstance.CurrentStage.StageNb
+		nextStageNb := currentStageNb + 1
+
+		// Check if there's a next stage in current world
+		stageExists := false
+		for _, stage := range gr.gameInstance.CurrentWorld.Stages {
+			if stage.StageNb == nextStageNb {
+				stageExists = true
+				break
+			}
+		}
+
+		if stageExists {
+			message = "🎉 Stage Cleared! 🎉\n\n"
+			message += "Proceeding to next stage...\n\n"
+		} else {
+			message = "🌟 World Completed! 🌟\n\n"
+			message += "Advancing to next world...\n\n"
+		}
+	} else {
+		message = "🎉 Area Cleared! 🎉\n\n"
+	}
+
+	message += "Press SPACE or ENTER to continue\n"
+	message += "Press ESC to stay in current area\n"
+	message += "Press Q to quit"
+
+	// Center the message on screen
+	lines := strings.Split(message, "\n")
+	maxLen := 0
+	for _, line := range lines {
+		if len(line) > maxLen {
+			maxLen = len(line)
+		}
+	}
+
+	// Add padding and borders
+	centeredMessage := ""
+	for _, line := range lines {
+		padding := (maxLen - len(line)) / 2
+		centeredMessage += strings.Repeat(" ", padding) + line + "\n"
+	}
+
+	return centeredMessage
+}
+
 func (gr *GameRender) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 	gr.updateGameSystems()
 	// Update UI components based on message type
@@ -203,6 +255,8 @@ func (gr *GameRender) handleKeyInput(msg engine.KeyMsg) (engine.Model, engine.Cm
 		return gr.handleGameInput(msg)
 	case systems.StateCombat:
 		return gr.handleGameInput(msg)
+	case systems.StateStageTransition:
+		return gr.handleStageTransitionInput(msg)
 
 	default:
 		return gr, nil
@@ -219,6 +273,22 @@ func (gr *GameRender) handleLevelIntroInput(msg engine.KeyMsg) (engine.Model, en
 	gr.gameInstance.LevelIntro, cmd = gr.gameInstance.LevelIntro.Update(msg)
 
 	return gr, cmd
+}
+
+// handleStageTransitionInput handles input during stage transition state
+func (gr *GameRender) handleStageTransitionInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
+	switch msg.Rune {
+	case ' ', '\r', '\n': // Space, Enter to proceed
+		gr.transitionToNextLevel()
+		gr.gameState.ChangeState(systems.StateExploration)
+		return gr, nil
+	case 'q', 'Q': // Allow quitting
+		return gr, func() engine.Msg { return engine.Quit() }
+	case 27: // ESC - go back to exploration
+		gr.gameState.ChangeState(systems.StateExploration)
+		return gr, nil
+	}
+	return gr, nil
 }
 
 func (m *GameRender) Init() engine.Msg {
@@ -264,6 +334,8 @@ func (gr *GameRender) View() string {
 		return "Combat UI not initialized"
 	case systems.StateMerchant:
 		return gr.merchantMenu.View()
+	case systems.StateStageTransition:
+		return gr.renderStageTransition()
 	default:
 		return "Unknown State"
 	}
