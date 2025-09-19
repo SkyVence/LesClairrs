@@ -65,6 +65,10 @@ func (ss *SpawnerSystem) RemoveDefeatedEnemies() {
 // CheckPlayerProximity checks if the player is within combat range of any enemy
 func (ss *SpawnerSystem) CheckPlayerProximity(playerPos types.Position, combatRange float64) *entities.Enemy {
 	for _, enemy := range ss.GetActiveEnemies() {
+		// Double-check that enemy is alive (defensive programming)
+		if !enemy.IsAlive {
+			continue
+		}
 		if enemy.IsWithinRange(playerPos, combatRange) {
 			return enemy
 		}

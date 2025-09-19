@@ -39,6 +39,11 @@ func (gr *GameRender) handleSizeUpdate(msg engine.SizeMsg) {
 	gr.merchantMenu, _ = gr.merchantMenu.Update(msg)
 	*gr.hud, _ = gr.hud.Update(msg)
 
+	// Update combat UI if it exists
+	if gr.combatSystem.GetCombatUI() != nil {
+		gr.combatSystem.GetCombatUI().Update(msg)
+	}
+
 	// Update game space if it exists
 	if gr.gameSpace != nil {
 		gr.gameSpace.UpdateSize(msg.Width-1, msg.Height-gr.hud.Height()-1)
@@ -67,6 +72,12 @@ func (gr *GameRender) updateGameSystems() {
 	if gr.gameState.CurrentState == systems.StateCombat {
 		if gr.combatSystem != nil && gr.gameInstance != nil && gr.gameInstance.Player != nil {
 			gr.combatSystem.Update(gr.gameInstance.Player)
+
+			// Check if combat is ready to exit
+			if gr.combatSystem.IsReadyToExit() {
+				// Combat has ended, return to exploration
+				gr.gameState.ChangeState(systems.StateExploration)
+			}
 		}
 	}
 }

@@ -1,6 +1,8 @@
 package game
 
 import (
+	"time"
+
 	"projectred-rpg.com/config"
 	"projectred-rpg.com/engine"
 	"projectred-rpg.com/game/systems"
@@ -22,6 +24,7 @@ func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.C
 
 			if gr.combatSystem.TryEngageCombat(gr.gameInstance.Player) {
 				gr.gameState.ChangeState(systems.StateCombat)
+				return gr, engine.Tick(time.Second / 60) // Start combat tick loop
 			}
 		}
 	case 'm':
@@ -152,20 +155,24 @@ func (gr *GameRender) handleCombatInput(msg engine.KeyMsg) {
 
 	switch msg.Rune {
 	case '↑':
-		combatUI.SelectPrevAction()
+		// Navigate up in action menu
+		if combatUI.SelectedAction > 0 {
+			combatUI.SelectedAction--
+		}
 	case '↓':
-		combatUI.SelectNextAction()
+		// Navigate down in action menu
+		if combatUI.SelectedAction < len(combatUI.AvailableActions)-1 {
+			combatUI.SelectedAction++
+		}
 	case '\r', '\n', ' ': // Enter or Space - confirm action
-		action := combatUI.GetSelectedAction()
-		if action != "" {
+		if combatUI.SelectedAction >= 0 && combatUI.SelectedAction < len(combatUI.AvailableActions) {
+			action := combatUI.AvailableActions[combatUI.SelectedAction]
 			success := gr.combatSystem.ProcessPlayerAction(action, gr.gameInstance.Player)
 			if action == "Run" && success {
 				// Successfully ran away, return to exploration
 				gr.gameState.ChangeState(systems.StateExploration)
 			}
 		}
-	case 'h', 'H': // Toggle history
-		combatUI.ToggleHistory()
 	case 'q', 'Q': // Force quit combat (emergency exit)
 		gr.combatSystem.ExitCombat()
 		gr.gameState.ChangeState(systems.StateExploration)

@@ -126,6 +126,12 @@ func (gr *GameRenderer) SetEnemies(enemies []*entities.Enemy) {
 	gr.enemies = enemies
 }
 
+// ForceRefreshEnemies immediately updates the enemy list to reflect current spawner state
+func (gr *GameRenderer) ForceRefreshEnemies(enemies []*entities.Enemy) {
+	gr.enemies = make([]*entities.Enemy, len(enemies))
+	copy(gr.enemies, enemies)
+}
+
 // MapSize returns underlying map dimensions (0,0 if none)
 func (gr *GameRenderer) MapSize() (int, int) {
 	if gr.tileMap == nil {

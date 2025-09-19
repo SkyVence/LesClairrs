@@ -1,6 +1,8 @@
 package game
 
 import (
+	"time"
+
 	"projectred-rpg.com/config"
 	"projectred-rpg.com/engine"
 	"projectred-rpg.com/game/loaders"
@@ -159,6 +161,11 @@ func (gr *GameRender) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 			return gr, cmd
 		}
 
+		// Keep ticking during combat to process enemy turns
+		if gr.gameState.CurrentState == systems.StateCombat {
+			return gr, engine.Tick(time.Second / 60) // 60 FPS tick rate
+		}
+
 	default:
 		// Handle other message types
 	}
@@ -213,6 +220,12 @@ func (m *GameRender) Init() engine.Msg {
 	renderer := engine.GetGlobalRenderer()
 	if renderer != nil {
 		m.SetRenderer(renderer)
+
+		// Ensure combat UI gets proper initial size
+		if m.combatSystem.GetCombatUI() != nil {
+			sizeMsg := engine.SizeMsg{Width: m.screenWidth, Height: m.screenHeight}
+			m.combatSystem.GetCombatUI().Update(sizeMsg)
+		}
 	}
 	return nil
 }
@@ -240,7 +253,7 @@ func (gr *GameRender) View() string {
 		return gr.settingsMenu.View()
 	case systems.StateCombat:
 		if gr.combatSystem.GetCombatUI() != nil {
-			return gr.combatSystem.GetCombatUI().Render()
+			return gr.combatSystem.GetCombatUI().View()
 		}
 		return "Combat UI not initialized"
 	case systems.StateMerchant:
@@ -253,6 +266,14 @@ func (gr *GameRender) View() string {
 // SetRenderer initializes the combat UI with the provided renderer
 func (gr *GameRender) SetRenderer(renderer engine.Renderer) {
 	gr.combatSystem.SetRenderer(renderer)
+
+	// Set up combat exit callback to refresh gameSpace
+	gr.combatSystem.SetExitCallback(func() {
+		if gr.gameSpace != nil && gr.spawnerSystem != nil {
+			activeEnemies := gr.spawnerSystem.GetActiveEnemies()
+			gr.gameSpace.ForceRefreshEnemies(activeEnemies)
+		}
+	})
 }
 
 // À ajouter dans votre fichier GameRender principal

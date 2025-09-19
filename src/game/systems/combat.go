@@ -17,9 +17,12 @@ type CombatSystem struct {
 	CurrentEnemy        *entities.Enemy
 	locManager          *engine.LocalizationManager
 	spawnerSystem       *SpawnerSystem
-	combatUI            *ui.CombatUI
-	enemyTurnDelay      int // Frames to wait before processing enemy turn
-	maxEnemyTurnDelay   int // Maximum delay for enemy turns
+	combatUI            *ui.CombatHud
+	enemyTurnDelay      int    // Frames to wait before processing enemy turn
+	maxEnemyTurnDelay   int    // Maximum delay for enemy turns
+	resultDisplayDelay  int    // Frames to wait before auto-exiting combat after victory/defeat
+	maxResultDelay      int    // Maximum delay for result display
+	onExitCallback      func() // Callback to refresh game state when exiting combat
 }
 
 // NewCombatSystem creates a new combat system instance
@@ -31,13 +34,20 @@ func NewCombatSystem(initialState types.CombatState, locManager *engine.Localiza
 		spawnerSystem:       spawnerSystem,
 		combatUI:            nil, // Will be initialized later when renderer is available
 		enemyTurnDelay:      0,
-		maxEnemyTurnDelay:   60, // Wait ~1 second at 60fps before enemy acts
+		maxEnemyTurnDelay:   30, // Wait ~0.5 second at 60fps before enemy acts
+		resultDisplayDelay:  0,
+		maxResultDelay:      180, // Wait ~3 seconds at 60fps to show result
 	}
 }
 
 // SetRenderer sets the renderer and initializes the combat UI
 func (cs *CombatSystem) SetRenderer(renderer engine.Renderer) {
-	cs.combatUI = ui.NewCombatUI(renderer, cs.locManager)
+	cs.combatUI = ui.NewCombatHud(renderer, cs.locManager)
+}
+
+// SetExitCallback sets a callback function to be called when combat exits
+func (cs *CombatSystem) SetExitCallback(callback func()) {
+	cs.onExitCallback = callback
 }
 
 func (cs *CombatSystem) ChangeCombatState(newState types.CombatState) {
@@ -47,6 +57,11 @@ func (cs *CombatSystem) ChangeCombatState(newState types.CombatState) {
 	// Reset enemy turn delay when transitioning to enemy turn
 	if newState == types.EnemyTurn {
 		cs.enemyTurnDelay = cs.maxEnemyTurnDelay
+	}
+
+	// Reset result display delay when transitioning to victory or defeat
+	if newState == types.Victory || newState == types.Dead {
+		cs.resultDisplayDelay = cs.maxResultDelay
 	}
 }
 
@@ -65,7 +80,7 @@ func (cs *CombatSystem) EnterCombat(e *entities.Enemy, p *types.Player) {
 	// Set up the combat UI if available
 	if cs.combatUI != nil {
 		cs.combatUI.SetCombatants(p, e)
-		cs.combatUI.SetTurn(types.PlayerTurn)
+		cs.combatUI.UpdateState(types.PlayerTurn)
 		cs.combatUI.AddAction("System", "Combat", "", 0, fmt.Sprintf("Combat started against %s!", e.Name))
 	}
 }
@@ -100,13 +115,13 @@ func (cs *CombatSystem) AiAttack(e entities.Enemy, p *types.Player) {
 	if cs.IsPlayerDefeated(p) {
 		cs.ChangeCombatState(types.Dead)
 		if cs.combatUI != nil {
-			cs.combatUI.SetTurn(types.Dead)
+			cs.combatUI.UpdateState(types.Dead)
 			cs.combatUI.AddAction("System", "Result", "", 0, "You have been defeated!")
 		}
 	} else {
 		cs.ChangeCombatState(types.PlayerTurn)
 		if cs.combatUI != nil {
-			cs.combatUI.SetTurn(types.PlayerTurn)
+			cs.combatUI.UpdateState(types.PlayerTurn)
 		}
 	}
 }
@@ -123,7 +138,7 @@ func (cs *CombatSystem) AiDefend(e *entities.Enemy) {
 
 	cs.ChangeCombatState(types.PlayerTurn)
 	if cs.combatUI != nil {
-		cs.combatUI.SetTurn(types.PlayerTurn)
+		cs.combatUI.UpdateState(types.PlayerTurn)
 	}
 }
 
@@ -159,13 +174,13 @@ func (cs *CombatSystem) AiSpecialAttack(e *entities.Enemy, p *types.Player) {
 	if cs.IsPlayerDefeated(p) {
 		cs.ChangeCombatState(types.Dead)
 		if cs.combatUI != nil {
-			cs.combatUI.SetTurn(types.Dead)
+			cs.combatUI.UpdateState(types.Dead)
 			cs.combatUI.AddAction("System", "Result", "", 0, "You have been defeated!")
 		}
 	} else {
 		cs.ChangeCombatState(types.PlayerTurn)
 		if cs.combatUI != nil {
-			cs.combatUI.SetTurn(types.PlayerTurn)
+			cs.combatUI.UpdateState(types.PlayerTurn)
 		}
 	}
 }
@@ -190,7 +205,7 @@ func (cs *CombatSystem) AiHeal(e *entities.Enemy) {
 
 	cs.ChangeCombatState(types.PlayerTurn)
 	if cs.combatUI != nil {
-		cs.combatUI.SetTurn(types.PlayerTurn)
+		cs.combatUI.UpdateState(types.PlayerTurn)
 	}
 }
 
@@ -209,7 +224,7 @@ func (cs *CombatSystem) AiTaunt(e *entities.Enemy, p *types.Player) {
 
 	cs.ChangeCombatState(types.PlayerTurn)
 	if cs.combatUI != nil {
-		cs.combatUI.SetTurn(types.PlayerTurn)
+		cs.combatUI.UpdateState(types.PlayerTurn)
 	}
 }
 
@@ -280,8 +295,14 @@ func (cs *CombatSystem) PlayerAttack(e *entities.Enemy, p *types.Player) {
 	if defeated {
 		cs.ChangeCombatState(types.Victory)
 		if cs.combatUI != nil {
-			cs.combatUI.SetTurn(types.Victory)
+			cs.combatUI.UpdateState(types.Victory)
 		}
+
+		// Remove the defeated enemy from the game world immediately
+		if cs.spawnerSystem != nil {
+			cs.spawnerSystem.RemoveDefeatedEnemies()
+		}
+
 		p.AddExperience(e.ExpReward)
 		expMessage := fmt.Sprintf("%s gains %d experience!", p.Name, e.ExpReward)
 		if cs.combatUI != nil {
@@ -291,7 +312,7 @@ func (cs *CombatSystem) PlayerAttack(e *entities.Enemy, p *types.Player) {
 	} else {
 		cs.ChangeCombatState(types.EnemyTurn)
 		if cs.combatUI != nil {
-			cs.combatUI.SetTurn(types.EnemyTurn)
+			cs.combatUI.UpdateState(types.EnemyTurn)
 		}
 	}
 }
@@ -304,7 +325,7 @@ func (cs *CombatSystem) PlayerDefend(p *types.Player) {
 	}
 	cs.ChangeCombatState(types.EnemyTurn)
 	if cs.combatUI != nil {
-		cs.combatUI.SetTurn(types.EnemyTurn)
+		cs.combatUI.UpdateState(types.EnemyTurn)
 	}
 }
 
@@ -329,7 +350,7 @@ func (cs *CombatSystem) PlayerRun(p *types.Player) bool {
 		}
 		cs.ChangeCombatState(types.EnemyTurn)
 		if cs.combatUI != nil {
-			cs.combatUI.SetTurn(types.EnemyTurn)
+			cs.combatUI.UpdateState(types.EnemyTurn)
 		}
 		return false
 	}
@@ -384,10 +405,20 @@ func (cs *CombatSystem) ExitCombat() {
 	if cs.combatUI != nil {
 		cs.combatUI.AddAction("System", "Combat", "", 0, "Combat ended.")
 	}
+
+	// Ensure defeated enemies are cleaned up when exiting combat
+	if cs.spawnerSystem != nil {
+		cs.spawnerSystem.RemoveDefeatedEnemies()
+	}
+
+	// Trigger callback to refresh game state
+	if cs.onExitCallback != nil {
+		cs.onExitCallback()
+	}
 }
 
 // GetCombatUI returns the combat UI instance
-func (cs *CombatSystem) GetCombatUI() *ui.CombatUI {
+func (cs *CombatSystem) GetCombatUI() *ui.CombatHud {
 	return cs.combatUI
 }
 
@@ -410,7 +441,7 @@ func (cs *CombatSystem) ProcessPlayerAction(action string, p *types.Player) bool
 		}
 		cs.ChangeCombatState(types.EnemyTurn)
 		if cs.combatUI != nil {
-			cs.combatUI.SetTurn(types.EnemyTurn)
+			cs.combatUI.UpdateState(types.EnemyTurn)
 		}
 	case "Run":
 		return cs.PlayerRun(p)
@@ -419,6 +450,11 @@ func (cs *CombatSystem) ProcessPlayerAction(action string, p *types.Player) bool
 	}
 
 	return true
+}
+
+// IsReadyToExit returns true if combat has ended and should transition back to exploration
+func (cs *CombatSystem) IsReadyToExit() bool {
+	return cs.CurrentCombatState == types.Idle
 }
 
 // Update should be called each frame to handle AI turns and UI updates
@@ -433,8 +469,13 @@ func (cs *CombatSystem) Update(p *types.Player) {
 		}
 	}
 
-	// Update the combat UI display
-	if cs.IsInCombat() && cs.combatUI != nil {
-		cs.combatUI.Display()
+	// Handle result display delay for victory/defeat states
+	if cs.CurrentCombatState == types.Victory || cs.CurrentCombatState == types.Dead {
+		if cs.resultDisplayDelay > 0 {
+			cs.resultDisplayDelay--
+		} else {
+			// Auto-exit combat after showing result
+			cs.ExitCombat()
+		}
 	}
 }
