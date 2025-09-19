@@ -132,6 +132,102 @@ func (gr *GameRenderer) ForceRefreshEnemies(enemies []*entities.Enemy) {
 	copy(gr.enemies, enemies)
 }
 
+// RemoveEnemy removes a specific enemy from the renderer by reference
+func (gr *GameRenderer) RemoveEnemy(enemyToRemove *entities.Enemy) bool {
+	if gr.enemies == nil {
+		return false
+	}
+
+	for i, enemy := range gr.enemies {
+		if enemy == enemyToRemove {
+			// Remove enemy by slicing
+			gr.enemies = append(gr.enemies[:i], gr.enemies[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// RemoveEnemyByPosition removes an enemy at a specific position
+func (gr *GameRenderer) RemoveEnemyByPosition(pos types.Position) bool {
+	if gr.enemies == nil {
+		return false
+	}
+
+	for i, enemy := range gr.enemies {
+		enemyPos := enemy.GetPosition()
+		if enemyPos.X == pos.X && enemyPos.Y == pos.Y {
+			gr.enemies = append(gr.enemies[:i], gr.enemies[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// RemoveDeadEnemies removes all enemies that are not alive from the renderer
+func (gr *GameRenderer) RemoveDeadEnemies() int {
+	if gr.enemies == nil {
+		return 0
+	}
+
+	originalCount := len(gr.enemies)
+	aliveEnemies := make([]*entities.Enemy, 0, len(gr.enemies))
+
+	for _, enemy := range gr.enemies {
+		if enemy.IsAlive {
+			aliveEnemies = append(aliveEnemies, enemy)
+		}
+	}
+
+	gr.enemies = aliveEnemies
+	return originalCount - len(gr.enemies)
+}
+
+// ClearAllEnemies removes all enemies from the renderer
+func (gr *GameRenderer) ClearAllEnemies() {
+	gr.enemies = nil
+}
+
+// GetEnemyCount returns the current number of enemies in the renderer
+func (gr *GameRenderer) GetEnemyCount() int {
+	if gr.enemies == nil {
+		return 0
+	}
+	return len(gr.enemies)
+}
+
+// GetAliveEnemyCount returns the number of alive enemies
+func (gr *GameRenderer) GetAliveEnemyCount() int {
+	if gr.enemies == nil {
+		return 0
+	}
+
+	count := 0
+	for _, enemy := range gr.enemies {
+		if enemy.IsAlive {
+			count++
+		}
+	}
+	return count
+}
+
+// GetEnemiesInArea returns all enemies within a rectangular area
+func (gr *GameRenderer) GetEnemiesInArea(topLeft, bottomRight types.Position) []*entities.Enemy {
+	if gr.enemies == nil {
+		return nil
+	}
+
+	enemiesInArea := make([]*entities.Enemy, 0)
+	for _, enemy := range gr.enemies {
+		pos := enemy.GetPosition()
+		if pos.X >= topLeft.X && pos.X <= bottomRight.X &&
+			pos.Y >= topLeft.Y && pos.Y <= bottomRight.Y {
+			enemiesInArea = append(enemiesInArea, enemy)
+		}
+	}
+	return enemiesInArea
+}
+
 // MapSize returns underlying map dimensions (0,0 if none)
 func (gr *GameRenderer) MapSize() (int, int) {
 	if gr.tileMap == nil {
@@ -243,8 +339,8 @@ func (gr *GameRenderer) renderEnemies(grid [][]rune) {
 		return
 	}
 
-	// Use the same stick man sprite as the player
-	enemySprite := ` o  
+	// Default enemy sprite fallback
+	defaultEnemySprite := ` ●  
 /|\/
 / \`
 
@@ -260,6 +356,12 @@ func (gr *GameRenderer) renderEnemies(grid [][]rune) {
 		if enemyX >= gr.viewX && enemyX < gr.viewX+gr.innerW &&
 			enemyY >= gr.viewY && enemyY < gr.viewY+gr.innerH {
 
+			// Use enemy's own sprite if available, otherwise use default
+			enemySprite := enemy.Sprite
+			if enemySprite == "" {
+				enemySprite = defaultEnemySprite
+			}
+
 			// Render enemy sprite similar to player rendering
 			spriteLines := strings.Split(enemySprite, "\n")
 			for i, line := range spriteLines {
@@ -267,7 +369,7 @@ func (gr *GameRenderer) renderEnemies(grid [][]rune) {
 				if y >= 0 && y < gr.height {
 					for j, char := range line {
 						x := gr.innerX + 1 + (enemyX - gr.viewX - 1) + j
-						if x >= 0 && x < gr.width {
+						if x >= 0 && x < gr.width && char != ' ' {
 							grid[y][x] = char
 						}
 					}
@@ -318,6 +420,50 @@ func (gr *GameRenderer) gridToString(grid [][]rune) string {
 }
 
 // Extension points for future systems can be added here when needed.
+
+// AddEnemy adds a new enemy to the renderer
+func (gr *GameRenderer) AddEnemy(enemy *entities.Enemy) {
+	if gr.enemies == nil {
+		gr.enemies = make([]*entities.Enemy, 0)
+	}
+	gr.enemies = append(gr.enemies, enemy)
+}
+
+// FindEnemyByPosition finds an enemy at a specific position
+func (gr *GameRenderer) FindEnemyByPosition(pos types.Position) *entities.Enemy {
+	if gr.enemies == nil {
+		return nil
+	}
+
+	for _, enemy := range gr.enemies {
+		enemyPos := enemy.GetPosition()
+		if enemyPos.X == pos.X && enemyPos.Y == pos.Y && enemy.IsAlive {
+			return enemy
+		}
+	}
+	return nil
+}
+
+// GetVisibleEnemies returns all enemies currently visible in the viewport
+func (gr *GameRenderer) GetVisibleEnemies() []*entities.Enemy {
+	if gr.enemies == nil {
+		return nil
+	}
+
+	visibleEnemies := make([]*entities.Enemy, 0)
+	for _, enemy := range gr.enemies {
+		if !enemy.IsAlive {
+			continue
+		}
+
+		pos := enemy.GetPosition()
+		if pos.X >= gr.viewX && pos.X < gr.viewX+gr.innerW &&
+			pos.Y >= gr.viewY && pos.Y < gr.viewY+gr.innerH {
+			visibleEnemies = append(visibleEnemies, enemy)
+		}
+	}
+	return visibleEnemies
+}
 
 func (gr *GameRenderer) UpdateSize(width, height int) {
 	if width < 10 {

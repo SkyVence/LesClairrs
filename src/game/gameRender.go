@@ -38,7 +38,9 @@ type GameRender struct {
 	// Game Data
 	// Add game time
 	// Add lang settings
-	currentMap *types.TileMap
+	currentMap    *types.TileMap
+	loadedWorldID int // Track currently loaded world
+	loadedStageID int // Track currently loaded stage
 }
 
 func initializeGameInstance() *Game {
@@ -103,9 +105,11 @@ func GameModel() *GameRender {
 		classSelection: classSelection,
 		merchantMenu:   merchantMenu,
 
-		screenWidth:  80,
-		screenHeight: 24,
-		inputBuffer:  make([]engine.KeyMsg, 0, 10),
+		screenWidth:   80,
+		screenHeight:  24,
+		inputBuffer:   make([]engine.KeyMsg, 0, 10),
+		loadedWorldID: -1, // Initialize to invalid values to force first load
+		loadedStageID: -1,
 	}
 }
 
@@ -119,14 +123,25 @@ func (gr *GameRender) renderGameView() string {
 
 	// Load and set map for current world/stage if available
 	if gr.gameInstance != nil && gr.gameInstance.CurrentWorld != nil && gr.gameInstance.CurrentStage != nil {
-		tm := loaders.LoadStageMap(gr.gameInstance.CurrentWorld.WorldID, gr.gameInstance.CurrentStage.StageNb)
-		gr.currentMap = tm
-		gr.gameSpace.SetMap(tm)
+		currentWorldID := gr.gameInstance.CurrentWorld.WorldID
+		currentStageID := gr.gameInstance.CurrentStage.StageNb
 
-		gr.spawnerSystem.LoadStage(gr.gameInstance.CurrentStage)
-		// Ensure player spawn is valid for the loaded map
-		if gr.gameInstance.Player != nil {
-			gr.movement.EnsureValidSpawn(gr.gameInstance.Player, gr.currentMap)
+		// Only reload if the stage has actually changed
+		if gr.loadedWorldID != currentWorldID || gr.loadedStageID != currentStageID {
+			tm := loaders.LoadStageMap(currentWorldID, currentStageID)
+			gr.currentMap = tm
+			gr.gameSpace.SetMap(tm)
+
+			gr.spawnerSystem.LoadStage(gr.gameInstance.CurrentStage)
+
+			// Update tracking variables
+			gr.loadedWorldID = currentWorldID
+			gr.loadedStageID = currentStageID
+
+			// Ensure player spawn is valid for the loaded map
+			if gr.gameInstance.Player != nil {
+				gr.movement.EnsureValidSpawn(gr.gameInstance.Player, gr.currentMap)
+			}
 		}
 	}
 
@@ -142,17 +157,13 @@ func (gr *GameRender) renderGameView() string {
 }
 
 func (gr *GameRender) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
-
 	gr.updateGameSystems()
-
 	// Update UI components based on message type
 	switch msg := msg.(type) {
 	case engine.SizeMsg:
 		gr.handleSizeUpdate(msg)
-
 	case engine.KeyMsg:
 		return gr.handleKeyInput(msg)
-
 	case engine.TickMsg:
 		// Handle level intro tick updates
 		if gr.gameInstance != nil && gr.gameInstance.IsShowingIntro() {
@@ -160,16 +171,13 @@ func (gr *GameRender) Update(msg engine.Msg) (engine.Model, engine.Cmd) {
 			gr.gameInstance.LevelIntro, cmd = gr.gameInstance.LevelIntro.Update(msg)
 			return gr, cmd
 		}
-
 		// Keep ticking during combat to process enemy turns
 		if gr.gameState.CurrentState == systems.StateCombat {
 			return gr, engine.Tick(time.Second / 60) // 60 FPS tick rate
 		}
-
 	default:
 		// Handle other message types
 	}
-
 	return gr, nil
 }
 
@@ -187,10 +195,8 @@ func (gr *GameRender) handleKeyInput(msg engine.KeyMsg) (engine.Model, engine.Cm
 
 	case systems.StateClassSelection:
 		return gr.handleClassSelectionInput(msg)
-
 	case systems.StateSettings:
 		return gr.handleSettingsSelectionInput(msg)
-
 	case systems.StateMerchant:
 		return gr.handleMerchantInput(msg)
 	case systems.StateExploration:
@@ -269,11 +275,26 @@ func (gr *GameRender) SetRenderer(renderer engine.Renderer) {
 
 	// Set up combat exit callback to refresh gameSpace
 	gr.combatSystem.SetExitCallback(func() {
-		if gr.gameSpace != nil && gr.spawnerSystem != nil {
-			activeEnemies := gr.spawnerSystem.GetActiveEnemies()
-			gr.gameSpace.ForceRefreshEnemies(activeEnemies)
+		if gr.gameSpace != nil {
+			// Clean up defeated enemies first
+			gr.gameSpace.RemoveDeadEnemies()
+
+			// Always refresh with the latest spawner data
+			if gr.spawnerSystem != nil {
+				// Clean up any defeated enemies in the spawner system
+				gr.spawnerSystem.RemoveDefeatedEnemies()
+				activeEnemies := gr.spawnerSystem.GetActiveEnemies()
+				gr.gameSpace.ForceRefreshEnemies(activeEnemies)
+			}
 		}
 	})
+
+}
+
+// forceStageReload resets stage tracking to force a reload on next render
+func (gr *GameRender) forceStageReload() {
+	gr.loadedWorldID = -1
+	gr.loadedStageID = -1
 }
 
 // À ajouter dans votre fichier GameRender principal
@@ -297,11 +318,13 @@ func (gr *GameRender) transitionToNextLevel() {
 
 	if stageExists {
 		gr.gameInstance.LoadStage(currentWorldID, nextStageNb)
+		gr.forceStageReload() // Reset tracking for new stage
 	} else {
 		nextWorldID := currentWorldID + 1
 
 		if world, exists := loaders.GetWorld(nextWorldID); exists && len(world.Stages) > 0 {
 			gr.gameInstance.LoadStage(nextWorldID, 1)
+			gr.forceStageReload() // Reset tracking for new stage
 		} else {
 			return
 		}

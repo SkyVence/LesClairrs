@@ -70,6 +70,7 @@ func (gr *GameRender) handleClassSelectionInput(msg engine.KeyMsg) (engine.Model
 					gr.gameInstance = NewGameInstance(class, currentLang) // CORRIGÉ
 
 					gr.gameInstance.LoadStage(1, 1)
+					gr.forceStageReload() // Reset tracking to ensure stage loads
 
 					gr.gameState.ChangeState(systems.StateExploration)
 					return gr, nil

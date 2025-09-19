@@ -181,6 +181,11 @@ func (cui *CombatHud) AddAction(actor, actionType, target string, damage int, me
 // UpdateState updates the combat UI state
 func (cui *CombatHud) UpdateState(turn types.CombatState) {
 	cui.CurrentTurn = turn
+
+	// Clear enemy reference when player is defeated for immediate UI cleanup
+	if turn == types.Dead {
+		cui.Enemy = nil
+	}
 }
 
 func (cui *CombatHud) Init() engine.Cmd {
@@ -301,9 +306,9 @@ func (cui *CombatHud) InfoView(playerHealthBar string, enemyHealthBar string) st
 		cui.Styles.HealthBar.Render(playerHealthBar))
 	playerBox := cui.Styles.Container.Render(playerContent)
 
-	// Only show enemy info if combat is still active (not victory/defeat)
-	if cui.CurrentTurn == types.Victory || cui.CurrentTurn == types.Dead {
-		// Just show player info during victory/defeat screen
+	// Only show enemy info if combat is still active (not victory/defeat), enemy health bar is provided, and enemy exists
+	if cui.CurrentTurn == types.Victory || cui.CurrentTurn == types.Dead || enemyHealthBar == "" || cui.Enemy == nil {
+		// Just show player info during victory/defeat screen or when no enemy data is provided
 		return playerBox
 	}
 
@@ -324,9 +329,14 @@ func (cui *CombatHud) View() string {
 		return "If you see this, something went wrong. The terminal size is zero."
 	}
 
-	// Health Bars
+	// Always calculate player health bar
 	playerHealthBar := cui.PHealthBar(cui.Player.Stats.CurrentHP, cui.Player.Stats.MaxHP, 20, cui.Player)
-	enemyHealthBar := cui.EHealthBar(cui.Enemy.CurrentHP, cui.Enemy.MaxHP, 20, cui.Enemy)
+
+	// Only calculate enemy health bar if combat is still active (not victory/defeat) and enemy exists
+	var enemyHealthBar string
+	if cui.CurrentTurn != types.Victory && cui.CurrentTurn != types.Dead && cui.Enemy != nil {
+		enemyHealthBar = cui.EHealthBar(cui.Enemy.CurrentHP, cui.Enemy.MaxHP, 20, cui.Enemy)
+	}
 
 	// Get UI components
 	infoView := cui.InfoView(playerHealthBar, enemyHealthBar)

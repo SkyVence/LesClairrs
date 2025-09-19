@@ -303,6 +303,11 @@ func (cs *CombatSystem) PlayerAttack(e *entities.Enemy, p *types.Player) {
 			cs.spawnerSystem.RemoveDefeatedEnemies()
 		}
 
+		// Immediately refresh the game space to remove defeated enemies visually
+		if cs.onExitCallback != nil {
+			cs.onExitCallback()
+		}
+
 		p.AddExperience(e.ExpReward)
 		expMessage := fmt.Sprintf("%s gains %d experience!", p.Name, e.ExpReward)
 		if cs.combatUI != nil {
@@ -410,11 +415,12 @@ func (cs *CombatSystem) ExitCombat() {
 	if cs.spawnerSystem != nil {
 		cs.spawnerSystem.RemoveDefeatedEnemies()
 	}
-
-	// Trigger callback to refresh game state
+	// Immediately refresh the game world enemy list
 	if cs.onExitCallback != nil {
 		cs.onExitCallback()
 	}
+
+	// Trigger callback to signal end of combat (for state transition)
 }
 
 // GetCombatUI returns the combat UI instance
