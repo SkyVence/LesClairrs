@@ -11,6 +11,7 @@ type Stage struct {
 	Name           string
 	Enemies        []EnemySpawn
 	ClearingReward int
+	PlayerSpawn    Position
 }
 
 type World struct {

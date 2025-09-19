@@ -15,6 +15,7 @@ const (
 	StateVictoryScreen
 	StatePauseMenu
 	StateStageTransition
+	StateDebugMenu
 )
 
 type GameState struct {

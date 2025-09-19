@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -133,6 +134,9 @@ func (gr *GameRender) renderGameView() string {
 			gr.currentMap = tm
 			gr.gameSpace.SetMap(tm)
 
+			// Reset movement system's map state
+			gr.movement.ResetMap(tm)
+
 			gr.spawnerSystem.LoadStage(gr.gameInstance.CurrentStage)
 
 			// Update tracking variables
@@ -186,7 +190,6 @@ func (gr *GameRender) renderStageTransition() string {
 	}
 
 	message += "Press SPACE or ENTER to continue\n"
-	message += "Press ESC to stay in current area\n"
 	message += "Press Q to quit"
 
 	// Center the message on screen
@@ -255,12 +258,28 @@ func (gr *GameRender) handleKeyInput(msg engine.KeyMsg) (engine.Model, engine.Cm
 		return gr.handleGameInput(msg)
 	case systems.StateCombat:
 		return gr.handleGameInput(msg)
+	case systems.StateDebugMenu:
+		return gr.handleDebugInput(msg)
 	case systems.StateStageTransition:
 		return gr.handleStageTransitionInput(msg)
 
 	default:
 		return gr, nil
 	}
+}
+
+func (gr *GameRender) handleDebugInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
+	if gr.gameInstance == nil || gr.gameInstance.LevelIntro == nil {
+		return gr, nil
+	}
+	switch msg.Rune {
+	case ' ', '\r', '\n': // Space, Enter to proceed
+		gr.gameState.ChangeState(systems.StateExploration)
+		return gr, nil
+	case 'q', 'Q': // Allow quitting
+		return gr, func() engine.Msg { return engine.Quit() }
+	}
+	return gr, nil
 }
 
 func (gr *GameRender) handleLevelIntroInput(msg engine.KeyMsg) (engine.Model, engine.Cmd) {
@@ -281,6 +300,8 @@ func (gr *GameRender) handleStageTransitionInput(msg engine.KeyMsg) (engine.Mode
 	case ' ', '\r', '\n': // Space, Enter to proceed
 		gr.transitionToNextLevel()
 		gr.gameState.ChangeState(systems.StateExploration)
+		spawn := gr.gameInstance.CurrentStage.PlayerSpawn
+		gr.gameInstance.Movement.SetPlayerPosition(gr.GetPlayer(), spawn.X, spawn.Y, gr.gameSpace.tileMap)
 		return gr, nil
 	case 'q', 'Q': // Allow quitting
 		return gr, func() engine.Msg { return engine.Quit() }
@@ -336,6 +357,11 @@ func (gr *GameRender) View() string {
 		return gr.merchantMenu.View()
 	case systems.StateStageTransition:
 		return gr.renderStageTransition()
+	case systems.StateDebugMenu:
+		x, y := gr.gameInstance.Player.GetPosition()
+		x1, y1 := gr.gameInstance.CurrentStage.PlayerSpawn.X, gr.gameInstance.CurrentStage.PlayerSpawn.Y
+
+		return fmt.Sprintf("Player Position: %d %d // Player Spawn: %d %d", x, y, x1, y1)
 	default:
 		return "Unknown State"
 	}
@@ -402,46 +428,13 @@ func (gr *GameRender) transitionToNextLevel() {
 		}
 	}
 
-	// Forcer plusieurs mouvements pour sortir le joueur d'une collision
-	for i := 0; i < 5; i++ {
-		gr.movement.MovePlayer(gr.gameInstance.Player, '→', gr.currentMap)
-		gr.movement.MovePlayer(gr.gameInstance.Player, '↓', gr.currentMap)
-	}
-}
-
-func (gr *GameRender) fixPlayerPosition() {
-	// Essayer quelques positions de base qui sont généralement libres
-	safePositions := []struct{ x, y int }{
-		{1, 1}, {2, 1}, {1, 2}, {2, 2}, {3, 1}, {1, 3}, {3, 3}, {4, 4}, {5, 5},
-	}
-
-	for _, pos := range safePositions {
-		// Utiliser le système de mouvement pour positionner le joueur
-		// en utilisant une direction factice pour déclencher le positionnement
-		originalPos := gr.getPlayerPosition()
-
-		if gr.setPlayerPosition(pos.x, pos.y) {
-			// Vérifier si cette position est valide en essayant un mouvement nul
-			if gr.movement.MovePlayer(gr.gameInstance.Player, '↑', gr.currentMap) {
-				// Si le mouvement est valide, on reste ici
-				gr.setPlayerPosition(pos.x, pos.y)
-				return
-			}
-		}
-
-		// Restaurer la position originale si celle-ci ne fonctionne pas
-		gr.setPlayerPosition(originalPos.x, originalPos.y)
-	}
-}
-
-// Fonctions helper (à adapter selon votre structure Player)
-func (gr *GameRender) getPlayerPosition() struct{ x, y int } {
-	// À adapter selon vos champs Player réels
-	return struct{ x, y int }{x: 1, y: 1} // position par défaut
 }
 
 func (gr *GameRender) setPlayerPosition(x, y int) bool {
-	// À adapter selon vos champs Player réels
-	// Retourner true si le positionnement a réussi
-	return true
+	if gr.gameInstance != nil && gr.gameInstance.Player != nil {
+		gr.gameInstance.Player.Pos.X = x
+		gr.gameInstance.Player.Pos.Y = y
+		return true
+	}
+	return false
 }

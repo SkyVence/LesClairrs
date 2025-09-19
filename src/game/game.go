@@ -68,7 +68,11 @@ type Game struct {
 //	game := NewGameInstance(class)
 func NewGameInstance(selectedClass types.Class, language string) *Game {
 	world := NewWorld(1)
-	player := entities.NewPlayer("Sam", selectedClass, types.Position{X: 1, Y: 1})
+	spawn := types.Position{X: 1, Y: 1}
+	if len(world.Stages) > 0 && (world.Stages[0].PlayerSpawn != (types.Position{})) {
+		spawn = world.Stages[0].PlayerSpawn
+	}
+	player := entities.NewPlayer("Sam", selectedClass, spawn)
 
 	// Create level intro system
 	levelIntro := systems.NewLevelIntroSystem(language)

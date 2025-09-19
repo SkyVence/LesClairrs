@@ -56,7 +56,7 @@ func getCustomTransitionZone(worldID, stageNb int) (x, y, width, height int, has
 		case 1:
 			return 4, 1, 16, 2, true // Custom position for world 1, stage 1
 		case 2:
-			return 5, 15, 3, 2, true // Custom position for world 1, stage 2
+			return 2, 5, 2, 3, true // Custom position for world 1, stage 2
 		case 3:
 			return 20, 5, 2, 3, true // Custom position for world 1, stage 3
 		}

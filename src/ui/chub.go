@@ -283,10 +283,11 @@ func (cui *CombatHud) ActionMenu() string {
 	content := cui.Styles.Text.Render(cui.LocManager.Text("ui.hud.actions.prompt") + "\n\n")
 
 	for i, action := range cui.AvailableActions {
+		localized := cui.LocManager.Text("ui.hud.actions." + strings.ToLower(strings.ReplaceAll(action, " ", "_")))
 		if i == cui.SelectedAction {
-			content += cui.Styles.SelectedAction.Render("> "+cui.LocManager.Text("ui.hud.actions."+strings.ToLower(strings.ReplaceAll(action, " ", "_")))) + "\n"
+			content += cui.Styles.SelectedAction.Render("> "+localized) + "\n"
 		} else {
-			content += cui.Styles.UnselectedAction.Render(" "+cui.LocManager.Text("ui.hud.actions."+strings.ToLower(strings.ReplaceAll(action, " ", "_")))) + "\n"
+			content += cui.Styles.UnselectedAction.Render("  "+localized) + "\n"
 		}
 	}
 
@@ -356,10 +357,8 @@ func (cui *CombatHud) View() string {
 		victoryBanner := lipgloss.NewStyle().
 			Width(cui.TermWidth).
 			Align(lipgloss.Center).
-			Background(lipgloss.Color("#000000")).
 			Foreground(lipgloss.Color("#00FF00")).
 			Bold(true).
-			Padding(1, 0).
 			Render(victoryText)
 
 		// Combine main layout with victory banner at the top
@@ -372,10 +371,8 @@ func (cui *CombatHud) View() string {
 		defeatBanner := lipgloss.NewStyle().
 			Width(cui.TermWidth).
 			Align(lipgloss.Center).
-			Background(lipgloss.Color("#000000")).
 			Foreground(lipgloss.Color("#FF0000")).
 			Bold(true).
-			Padding(1, 0).
 			Render(defeatText)
 
 		// Combine main layout with defeat banner at the top

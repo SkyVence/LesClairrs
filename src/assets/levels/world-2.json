@@ -9,7 +9,8 @@
 				{"Name": "Rogue Drone", "Force": 5, "Speed": 5, "Defense": 3, "Accuracy": 7, "MaxHP": 20, "CurrentHP": 20, "ExpReward": 20, "Position": {"X": 8, "Y": 12}, "Sprite": "rogue_drone"},
 				{"Name": "Street Thug", "Force": 6, "Speed": 4, "Defense": 4, "Accuracy": 6, "MaxHP": 25, "CurrentHP": 25, "ExpReward": 25, "Position": {"X": 20, "Y": 4}, "Sprite": "street_thug"}
 			],
-			"ClearingReward": 50
+			"ClearingReward": 50,
+			"PlayerSpawn": { "X": 13, "Y": 31 }
 		},
 		{
 			"StageNb": 2,
@@ -18,7 +19,8 @@
 				{"Name": "Cyber Hound", "Force": 8, "Speed": 7, "Defense": 5, "Accuracy": 8, "MaxHP": 30, "CurrentHP": 30, "ExpReward": 40, "Position": {"X": 14, "Y": 7}, "Sprite": "cyber_hound"},
 				{"Name": "Gang Enforcer", "Force": 9, "Speed": 6, "Defense": 6, "Accuracy": 7, "MaxHP": 35, "CurrentHP": 35, "ExpReward": 45, "Position": {"X": 22, "Y": 11}, "Sprite": "gang_enforcer"}
 			],
-			"ClearingReward": 75
+			"ClearingReward": 75,
+			"PlayerSpawn": { "X": 13, "Y": 31 }
 		}
 	]
 }

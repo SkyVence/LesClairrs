@@ -32,9 +32,15 @@ func (gr *GameRender) handleGameInput(msg engine.KeyMsg) (engine.Model, engine.C
 			gr.gameState.ChangeState(systems.StateMerchant)
 		}
 		return gr, nil
-	case 'p':
+	case 'd':
 		if gr.gameState.CurrentState == systems.StateExploration {
-			gr.transitionToNextLevel()
+			gr.gameState.ChangeState(systems.StateDebugMenu)
+		}
+		return gr, nil
+	case 'p':
+		// Allow 'p' to trigger next stage/world in exploration
+		if gr.gameState.CurrentState == systems.StateExploration {
+			gr.gameState.ChangeState(systems.StateStageTransition)
 		}
 		return gr, nil
 	}

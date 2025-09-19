@@ -8,6 +8,12 @@ import (
 // MovementSystem handles player movement and collision detection
 type MovementSystem struct {
 	// Movement configuration
+	currentMap *types.TileMap
+}
+
+// ResetMap resets the movement system's internal map reference.
+func (ms *MovementSystem) ResetMap(tm *types.TileMap) {
+	ms.currentMap = tm
 }
 
 // NewMovementSystem creates a new movement system instance
@@ -222,4 +228,37 @@ func (ms *MovementSystem) ValidatePosition(x, y, width, height int) bool {
 // GetPlayerPosition returns the current player position
 func (ms *MovementSystem) GetPlayerPosition(player *types.Player) (int, int) {
 	return player.GetPosition()
+}
+
+func (ms *MovementSystem) SetPlayerPosition(player *types.Player, x, y int, tm *types.TileMap) bool {
+	if player == nil {
+		return false
+	}
+	if !ms.ValidatePosition(x, y, 1, 1) {
+		return false
+	}
+	wTiles, hTiles := ms.spriteFootprintTiles(player)
+	if tm != nil {
+		mapW, mapH := tm.Width, tm.Height
+		maxX := mapW - wTiles - 1 // Account for sprite footprint and outer wall
+		maxY := mapH - hTiles - 1
+		if x < 2 || y < 2 || x > maxX || y > maxY {
+			return false
+		}
+		if !ms.isWalkableRect(tm, x, y, wTiles, hTiles) {
+			return false
+		}
+	}
+	player.Pos.X = x
+	player.Pos.Y = y
+	return true
+}
+
+// SetPlayerPositionNoCheck sets player position without validation (use with caution)
+func (ms *MovementSystem) SetPlayerPositionNoCheck(player *types.Player, x, y int) {
+	if player == nil {
+		return
+	}
+	player.Pos.X = x
+	player.Pos.Y = y
 }
