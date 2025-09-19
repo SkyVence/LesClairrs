@@ -18,17 +18,20 @@ var (
 	once             sync.Once
 )
 
+// GetLocalizationManager returns singleton instance of LocalizationManager
+// Initializes with default language "fr" on first call
 func GetLocalizationManager() *LocalizationManager {
 	once.Do(func() {
 		globalLocManager = &LocalizationManager{
 			currentLang: "fr",
 		}
-		// Initialize with default language
 		globalLocManager.SetLanguage("fr")
 	})
 	return globalLocManager
 }
 
+// SetLanguage loads and sets the catalog for the specified language
+// Returns error if language file cannot be loaded
 func (lm *LocalizationManager) SetLanguage(lang string) error {
 	lm.mutex.Lock()
 	defer lm.mutex.Unlock()
@@ -43,6 +46,8 @@ func (lm *LocalizationManager) SetLanguage(lang string) error {
 	return nil
 }
 
+// Text retrieves localized text for key with placeholder replacement
+// Returns placeholder notation if key not found or catalog not loaded
 func (lm *LocalizationManager) Text(key string, args ...any) string {
 	lm.mutex.RLock()
 	defer lm.mutex.RUnlock()
@@ -51,16 +56,18 @@ func (lm *LocalizationManager) Text(key string, args ...any) string {
 		return lm.catalog.Text(key, args...)
 	}
 
-	// Fallback to key name if no catalog loaded
 	return "⟦" + key + "⟧"
 }
 
+// GetCurrentLanguage returns the currently set language code
 func (lm *LocalizationManager) GetCurrentLanguage() string {
 	lm.mutex.RLock()
 	defer lm.mutex.RUnlock()
 	return lm.currentLang
 }
 
+// GetSupportedLanguages scans assets/interface directory for available .json language files
+// Returns slice of language codes and any directory read error
 func (lm *LocalizationManager) GetSupportedLanguages() ([]string, error) {
 	interfaceDir := "assets/interface"
 	files, err := os.ReadDir(interfaceDir)
@@ -71,7 +78,6 @@ func (lm *LocalizationManager) GetSupportedLanguages() ([]string, error) {
 	var languages []string
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".json") {
-			// Extract language code by removing .json extension
 			lang := strings.TrimSuffix(file.Name(), ".json")
 			languages = append(languages, lang)
 		}

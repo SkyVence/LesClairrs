@@ -66,6 +66,7 @@ type StandardRenderer struct {
 	ignoreLines map[int]struct{}
 }
 
+// NewRenderer creates a StandardRenderer with default 24fps frameRate
 func NewRenderer(out io.Writer) Renderer {
 	r := &StandardRenderer{
 		out:                out,
@@ -77,6 +78,7 @@ func NewRenderer(out io.Writer) Renderer {
 	return r
 }
 
+// Start initializes the renderer timer and begins the background rendering loop
 func (r *StandardRenderer) Start() {
 	if r.ticker == nil {
 		r.ticker = time.NewTicker(r.frameRate)
@@ -89,6 +91,7 @@ func (r *StandardRenderer) Start() {
 	go r.listen()
 }
 
+// Stop gracefully shuts down the renderer, flushes output, and shows cursor
 func (r *StandardRenderer) Stop() {
 	r.once.Do(func() {
 		r.done <- struct{}{}
@@ -102,10 +105,12 @@ func (r *StandardRenderer) Stop() {
 	r.execute(ansi.EraseEntireScreen)
 }
 
+// execute writes ANSI escape sequence to output stream
 func (r *StandardRenderer) execute(seq string) {
 	_, _ = io.WriteString(r.out, seq)
 }
 
+// Kill forcefully stops the renderer and clears the current line
 func (r *StandardRenderer) Kill() {
 	r.once.Do(func() {
 		r.done <- struct{}{}
@@ -118,6 +123,7 @@ func (r *StandardRenderer) Kill() {
 	r.execute("\r")
 }
 
+// listen runs the main render loop, waiting for timer ticks or shutdown signal
 func (r *StandardRenderer) listen() {
 	for {
 		select {
@@ -130,6 +136,7 @@ func (r *StandardRenderer) listen() {
 	}
 }
 
+// flush outputs buffered content to terminal with line-by-line optimization
 func (r *StandardRenderer) flush() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
@@ -220,6 +227,7 @@ func (r *StandardRenderer) flush() {
 	r.buf.Reset()
 }
 
+// lastLinesRendered returns appropriate line count based on screen mode
 func (r *StandardRenderer) lastLinesRendered() int {
 	if r.altScreenActive {
 		return r.altLinesRendered
@@ -227,6 +235,7 @@ func (r *StandardRenderer) lastLinesRendered() int {
 	return r.linesRendered
 }
 
+// ClearScreen erases entire screen and forces repaint
 func (r *StandardRenderer) ClearScreen() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
@@ -237,11 +246,13 @@ func (r *StandardRenderer) ClearScreen() {
 	r.Repaint()
 }
 
+// Repaint resets render state to force full redraw on next flush
 func (r *StandardRenderer) Repaint() {
 	r.lastRender = ""
 	r.lastRenderedLines = nil
 }
 
+// AltScreen returns whether alternate screen buffer is currently active
 func (r *StandardRenderer) AltScreen() bool {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
@@ -249,6 +260,7 @@ func (r *StandardRenderer) AltScreen() bool {
 	return r.altScreenActive
 }
 
+// EnterAltScreen switches to alternate screen buffer for full-screen mode
 func (r *StandardRenderer) EnterAltScreen() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
@@ -274,6 +286,7 @@ func (r *StandardRenderer) EnterAltScreen() {
 	r.Repaint()
 }
 
+// ExitAltScreen restores normal screen buffer and cursor position
 func (r *StandardRenderer) ExitAltScreen() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
@@ -294,6 +307,7 @@ func (r *StandardRenderer) ExitAltScreen() {
 	r.Repaint()
 }
 
+// ShowCursor makes the terminal cursor visible
 func (r *StandardRenderer) ShowCursor() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
@@ -302,6 +316,7 @@ func (r *StandardRenderer) ShowCursor() {
 	r.execute(ansi.ShowCursor)
 }
 
+// HideCursor makes the terminal cursor invisible
 func (r *StandardRenderer) HideCursor() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
@@ -310,10 +325,12 @@ func (r *StandardRenderer) HideCursor() {
 	r.execute(ansi.HideCursor)
 }
 
+// SetWindowTitle sets the terminal window title
 func (r *StandardRenderer) SetWindowTitle(title string) {
 	r.execute(ansi.SetWindowTitle(title))
 }
 
+// Write stores content in render buffer, replacing any previous content
 func (r *StandardRenderer) Write(s string) {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
@@ -326,6 +343,7 @@ func (r *StandardRenderer) Write(s string) {
 	_, _ = r.buf.WriteString(s)
 }
 
+// SetCursor positions cursor at specific coordinates in alternate screen mode
 func (r *StandardRenderer) SetCursor(x, y int) {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
@@ -335,6 +353,7 @@ func (r *StandardRenderer) SetCursor(x, y int) {
 	}
 }
 
+// GetSize returns current terminal width and height
 func (r *StandardRenderer) GetSize() (int, int) {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()

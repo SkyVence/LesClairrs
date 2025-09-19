@@ -18,16 +18,17 @@ type Program struct {
 }
 type ProgramOption func(*Program)
 
+// WithAltScreen enables alternate screen buffer for full-screen applications
 func WithAltScreen() ProgramOption {
 	return func(p *Program) {
 		p.useAltScreen = true
 	}
 }
 
+// GetSize returns terminal width and height, defaulting to 80x24 for non-terminals
 func (p *Program) GetSize() (int, int) {
 	fd := int(os.Stdin.Fd())
 
-	// Check if stdin is a terminal
 	if !term.IsTerminal(fd) {
 		return 80, 24
 	}
@@ -38,7 +39,6 @@ func (p *Program) GetSize() (int, int) {
 		return 80, 24
 	}
 
-	// Sanity check the values
 	if width <= 0 || height <= 0 {
 		return 80, 24
 	}
@@ -46,11 +46,12 @@ func (p *Program) GetSize() (int, int) {
 	return width, height
 }
 
-// GetRenderer returns the renderer instance
+// GetRenderer returns the renderer instance for external access
 func (p *Program) GetRenderer() Renderer {
 	return p.renderer
 }
 
+// NewProgram creates a new Program with model and applies provided options
 func NewProgram(model Model, opts ...ProgramOption) *Program {
 	p := &Program{
 		Model:    model,
@@ -65,6 +66,7 @@ func NewProgram(model Model, opts ...ProgramOption) *Program {
 	return p
 }
 
+// Run starts the program main loop, setting up terminal and handling input/rendering
 func (p *Program) Run() error {
 
 	fd := int(os.Stdin.Fd())
@@ -77,7 +79,6 @@ func (p *Program) Run() error {
 	p.renderer.Start()
 	defer p.renderer.Stop()
 
-	// Set the global renderer for access by game systems
 	SetGlobalRenderer(p.renderer)
 
 	if p.useAltScreen {
@@ -88,16 +89,13 @@ func (p *Program) Run() error {
 	p.renderer.HideCursor()
 	go ReadInput(p.msgs)
 
-	// Process the initial message from the model's Init() method.
 	var cmd Cmd
 	if initialMsg := p.Model.Init(); initialMsg != nil {
 		p.Model, cmd = p.Model.Update(initialMsg)
 	} else {
-		// If Init returns nil, still call Update with nil to trigger initialization
 		p.Model, cmd = p.Model.Update(nil)
 	}
 
-	// Execute the initial command if it exists
 	if cmd != nil {
 		go func() {
 			p.msgs <- cmd()
@@ -114,22 +112,17 @@ func (p *Program) Run() error {
 	}
 
 	for !p.quit {
-		// Get the current view from the model.
 		view := p.Model.View()
 
-		// Render the view.
 		p.renderer.Write(view)
 
-		// Wait for the next message from any source (e.g., keyboard input).
 		msg := <-p.msgs
 
-		// Handle the quit message specifically.
 		if _, ok := msg.(QuitMsg); ok {
 			p.quit = true
 			return nil
 		}
 
-		// Process the message by calling the model's Update function.
 		var cmd Cmd
 		p.Model, cmd = p.Model.Update(msg)
 

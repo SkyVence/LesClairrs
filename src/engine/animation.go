@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+// LoadAnimationFile reads and parses animation frames from file separated by "---"
+// Returns slice of frame strings and any file read/parse error
 func LoadAnimationFile(filename string) ([]string, error) {
 	content, err := os.ReadFile(filename)
 	if err != nil {
@@ -22,7 +24,6 @@ func LoadAnimationFile(filename string) ([]string, error) {
 
 	var cleanedFrames []string
 	for _, frame := range rawFrames {
-		// Only trim leading/trailing newlines, NOT spaces!
 		trimmedFrame := strings.Trim(frame, "\n\t")
 		if trimmedFrame != "" {
 			cleanedFrames = append(cleanedFrames, trimmedFrame)
@@ -42,6 +43,7 @@ type Animation struct {
 	speed  time.Duration
 }
 
+// NewAnimation creates a new Animation with frames and default 200ms speed
 func NewAnimation(frames []string) Animation {
 	return Animation{
 		Frames: frames,
@@ -49,10 +51,12 @@ func NewAnimation(frames []string) Animation {
 	}
 }
 
+// Init returns initial tick command to start animation timer
 func (a Animation) Init() Cmd {
 	return Tick(a.speed)
 }
 
+// Update advances animation frame on TickMsg and returns next tick command
 func (a Animation) Update(msg Msg) (Animation, Cmd) {
 	switch msg.(type) {
 	case TickMsg:
@@ -64,6 +68,7 @@ func (a Animation) Update(msg Msg) (Animation, Cmd) {
 	return a, nil
 }
 
+// View returns current animation frame as string for rendering
 func (a Animation) View() string {
 	if len(a.Frames) == 0 {
 		return "Animation has no frames."

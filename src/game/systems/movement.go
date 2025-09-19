@@ -110,7 +110,6 @@ func (ms *MovementSystem) EnsureValidSpawn(player *types.Player, tm *types.TileM
 			}
 			continue
 		}
-		// Diamond ring: (dx,dy) with |dx|+|dy| == r
 		for dx := -r; dx <= r; dx++ {
 			dy := r - abs(dx)
 			candidates := [][2]int{
@@ -126,12 +125,12 @@ func (ms *MovementSystem) EnsureValidSpawn(player *types.Player, tm *types.TileM
 			}
 		}
 	}
-	// As a last resort, set to (1,1) if walkable; else leave as is
 	if ms.isWalkableRect(tm, 1, 1, wTiles, hTiles) {
 		player.Pos.X, player.Pos.Y = 1, 1
 	}
 }
 
+// abs returns absolute value of integer
 func abs(v int) int {
 	if v < 0 {
 		return -v
@@ -139,8 +138,7 @@ func abs(v int) int {
 	return v
 }
 
-// MovePlayer moves the player in the specified direction using map bounds and walls.
-// The player is treated as occupying a single tile anchor; movement is blocked by wall tiles.
+// MovePlayer attempts to move player in specified direction, returns true if successful
 func (ms *MovementSystem) MovePlayer(player *types.Player, direction rune, tm *types.TileMap) bool {
 	if player == nil {
 		return false

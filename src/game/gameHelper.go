@@ -50,42 +50,32 @@ func (gr *GameRender) handleSizeUpdate(msg engine.SizeMsg) {
 	}
 }
 
+// updateGameSystems handles state-specific system updates for exploration and combat
 func (gr *GameRender) updateGameSystems() {
-	// Update exploration systems
 	if gr.gameState.CurrentState == systems.StateExploration {
-		// Clean up defeated enemies
 		if gr.spawnerSystem != nil {
 			gr.spawnerSystem.RemoveDefeatedEnemies()
 
-			// Check if stage is cleared
 			if gr.spawnerSystem.IsStageCleared() {
-				// Award clearing reward
 				if gr.gameInstance != nil && gr.gameInstance.Player != nil && gr.gameInstance.CurrentStage != nil {
-					// Add experience or handle stage completion
-					// gr.gameInstance.Player.AddExperience(gr.gameInstance.CurrentStage.ClearingReward)
+
 				}
 			}
 		}
 	}
 
-	// Update combat systems
 	if gr.gameState.CurrentState == systems.StateCombat {
 		if gr.combatSystem != nil && gr.gameInstance != nil && gr.gameInstance.Player != nil {
 			gr.combatSystem.Update(gr.gameInstance.Player)
 
-			// Check if combat is ready to exit
 			if gr.combatSystem.IsReadyToExit() {
-				// Check if player was defeated and handle respawn
 				if gr.gameInstance.Player.Stats.CurrentHP <= 0 {
 					gr.handlePlayerDefeat()
 				}
 
-				// Combat has ended, return to exploration
 				gr.gameState.ChangeState(systems.StateExploration)
 
-				// Force a refresh of the game space after state transition
 				if gr.gameSpace != nil && gr.spawnerSystem != nil {
-					// Ensure defeated enemies are removed and refresh the enemy list
 					gr.spawnerSystem.RemoveDefeatedEnemies()
 					activeEnemies := gr.spawnerSystem.GetActiveEnemies()
 					gr.gameSpace.ForceRefreshEnemies(activeEnemies)
@@ -95,7 +85,7 @@ func (gr *GameRender) updateGameSystems() {
 	}
 }
 
-// Helper to update HUD stats
+// updateHUDStats refreshes HUD with current player stats and location info
 func (gr *GameRender) updateHUDStats() {
 	if gr.gameInstance == nil || gr.gameInstance.Player == nil {
 		return
@@ -120,7 +110,7 @@ func (gr *GameRender) updateHUDStats() {
 	}
 }
 
-// handlePlayerDefeat manages player respawn after defeat
+// handlePlayerDefeat respawns player at 25% health in a safe position away from enemies
 func (gr *GameRender) handlePlayerDefeat() {
 	if gr.gameInstance == nil || gr.gameInstance.Player == nil {
 		return
@@ -128,25 +118,20 @@ func (gr *GameRender) handlePlayerDefeat() {
 
 	player := gr.gameInstance.Player
 
-	// Restore player to 25% health
 	player.Stats.CurrentHP = player.Stats.MaxHP / 4
 	if player.Stats.CurrentHP < 1 {
 		player.Stats.CurrentHP = 1
 	}
 
-	// Move player to a safe spawn position (usually 1,1 or 2,2)
 	safePositions := []struct{ x, y int }{
 		{2, 2}, {3, 2}, {2, 3}, {3, 3}, {1, 1}, {4, 4},
 	}
 
-	// Find a safe position away from enemies
 	for _, pos := range safePositions {
-		// Check if this position is safe (no enemies nearby)
 		isSafe := true
 		if gr.spawnerSystem != nil {
 			for _, enemy := range gr.spawnerSystem.GetActiveEnemies() {
 				enemyPos := enemy.GetPosition()
-				// Check if enemy is within 3 cells of this position
 				if abs(enemyPos.X-pos.x) <= 3 && abs(enemyPos.Y-pos.y) <= 3 {
 					isSafe = false
 					break
@@ -155,7 +140,6 @@ func (gr *GameRender) handlePlayerDefeat() {
 		}
 
 		if isSafe {
-			// Set player position
 			player.Pos.X = pos.x
 			player.Pos.Y = pos.y
 			break
@@ -163,7 +147,7 @@ func (gr *GameRender) handlePlayerDefeat() {
 	}
 }
 
-// Helper function for absolute value
+// abs returns absolute value of integer
 func abs(x int) int {
 	if x < 0 {
 		return -x
